@@ -1,6 +1,7 @@
 // node listen.test.js
 import assert from 'node:assert';
-import { chroma, classify, candidates } from './listen.js';
+import { peaks, chroma, bass, classify, candidates } from './listen.js';
+import { PALETTES } from './theory.js';
 
 // Fake analyser spectrum: each note has 10 overtones, each 30% quieter, smeared over nearby bins.
 const binHz = 48000 / 8192;
@@ -16,8 +17,14 @@ function spectrum(midis) {
   }
   return Array.from(lin, v => 20 * Math.log10(v));
 }
-const heard = (midis, extra) => classify(chroma(spectrum(midis), binHz), candidates(extra))[0].name;
+const POP = candidates(PALETTES.pop), JAZZ = candidates(PALETTES.jazz);
+const hear = (midis, list = POP, prefer = null) => {
+  const ps = peaks(spectrum(midis), binHz);
+  return classify(chroma(ps), list, { bass: bass(ps), prefer })[0];
+};
+const heard = (midis, list, prefer) => hear(midis, list, prefer).name;
 
+// Pop: one hand, triads
 assert.equal(heard([60, 64, 67]), 'C');            // C E G
 assert.equal(heard([64, 67, 72]), 'C');            // E G C, inversion
 assert.equal(heard([48, 60, 64, 67]), 'C');        // with a left-hand C
@@ -27,6 +34,13 @@ assert.equal(heard([53, 57, 60]), 'F');
 assert.equal(heard([55, 59, 62]), 'G');
 assert.equal(heard([59, 62, 65]), 'Bdim');
 assert.equal(heard([60]), 'C (one note)');         // a lone key must not pass as a chord
-assert.equal(heard([60, 64, 67], true), 'C');      // still C with 7ths/sus allowed
-assert.equal(heard([55, 59, 62, 65], true), 'G7');
+
+// Jazz: left-hand root + right-hand rootless voicing (what the app shows)
+const famOf = (midis, prefer) => { const b = hear(midis, JAZZ, prefer); return `${b.root}:${b.q}`; };
+assert.match(famOf([50, 65, 69, 72, 76]), /^2:m(7|9)$/);       // D + F A C E = Dm7/Dm9
+assert.match(famOf([55, 65, 69, 71, 76]), /^7:(7|9|13)$/);     // G + F A B E = G13
+assert.match(famOf([48, 64, 67, 71, 74]), /^0:maj(7|9)$/);     // C + E G B D = Cmaj9
+assert.equal(heard([57, 60, 64, 67], JAZZ), 'Am7');            // A + C E G: the bass says Am7, not C6
+assert.equal(heard([48, 64, 67, 69], JAZZ), 'C6');             // C + E G A: the bass says C6, not Am7
+assert.equal(heard([55, 59, 62, 65], JAZZ), 'G7');
 console.log('listen ok');

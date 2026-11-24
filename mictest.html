@@ -24,7 +24,8 @@
   .keys .w { fill: #f4f1ea; stroke: var(--bg); stroke-width: 2; }
   .keys .b { fill: #2a2a2a; stroke: var(--bg); stroke-width: 2; }
   .keys .on { fill: var(--accent); }
-  .keys text { font: 700 16px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
+  .keys text { font: 700 15px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
+  .keys text.f { font-size: 24px; }
   .keys text.c { font-weight: 400; fill: var(--dim); }
   #bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 8px 0 12px; }
   #bars div { display: flex; flex-direction: column; justify-content: flex-end; height: 140px; text-align: center; font-size: 14px; color: var(--dim); }
@@ -43,7 +44,7 @@
     <p class="label">Play</p>
     <p class="row"><span class="big" id="target"></span><span id="tally">0 / 0 right</span><button id="skip">Skip</button></p>
     <svg class="keys" id="keys" viewBox="0 0 560 160"></svg>
-    <p class="dim">C is the white key just left of the two black keys. Any C on your keyboard works. Right hand: thumb, middle finger, pinky.</p>
+    <p class="dim">C is the white key just left of the two black keys. Any C on your keyboard works. Big numbers are fingers: 1 thumb, 3 middle, 5 pinky.</p>
   </section>
   <section>
     <p class="label">Heard</p>
@@ -53,25 +54,25 @@
   <section>
     <p class="label">What the mic hears (orange = notes you should be playing)</p>
     <div id="bars"></div>
-    <label class="dim"><input type="checkbox" id="extra"> Also try 7ths and sus chords</label>
+    <label class="dim"><input type="checkbox" id="extra"> Also listen for jazz chords (7ths, 9ths, 6ths)</label>
     <ol id="log"></ol>
   </section>
 </main>
 <script type="module">
 import { NAMES, candidates, startMic } from './listen.js';
 import { drawKeys } from './keys.js';
-import { keysOf, spell, rootName, same } from './theory.js';
+import { keysOf, spell, rootName, same, PALETTES } from './theory.js';
 
 const DRILL = [[0, ''], [2, 'm'], [4, 'm'], [5, ''], [7, ''], [9, 'm'], [2, ''], [4, ''], [9, ''], [10, ''], [0, 'm'], [7, 'm']]
   .map(([root, q]) => ({ root, q }));
 const nameOf = c => rootName(c, null) + c.q;
 
 const $ = id => document.getElementById(id);
-let list = candidates(false), target, hits = 0, tries = 0, countFrom = 0;
+let list = candidates(PALETTES.pop), target, hits = 0, tries = 0, countFrom = 0;
 
 $('bars').innerHTML = NAMES.map(n => `<div><i></i>${n}</div>`).join('');
 const bars = [...$('bars').querySelectorAll('i')];
-$('extra').onchange = e => { list = candidates(e.target.checked); };
+$('extra').onchange = e => { list = candidates(e.target.checked ? PALETTES.jazz : PALETTES.pop); };
 $('skip').onclick = nextTarget;
 nextTarget();
 
@@ -80,7 +81,8 @@ function nextTarget() {
   do t = DRILL[Math.floor(Math.random() * DRILL.length)]; while (t === target);
   target = t;
   $('target').textContent = nameOf(t);
-  drawKeys($('keys'), keysOf(t), spell(t, null));
+  const names = spell(t, null);
+  drawKeys($('keys'), keysOf(t).map((midi, i) => ({ midi, cls: 'on', top: [1, 3, 5][i], bottom: names[i] })), 60, 2);
   bars.forEach((b, i) => b.classList.toggle('want', keysOf(t).some(m => m % 12 === i)));
   countFrom = performance.now() + 500; // the last chord's ringing doesn't count
 }

@@ -78,9 +78,12 @@ Moving from Show to Off is your progress. When Off feels easy, you've reached th
   - the keyboard's rhythm and accompaniment must be off
 
 ### 3.2 Chord set and spelling
-- **v1:** major, minor and diminished on all 12 roots (36 chords). That covers every chord the Basic suggestions use.
-- 7ths and sus chords (v2) are harder for the mic: they get added as "experimental" and kept only if they test well.
-- Spelling follows the key (B♭ in F, A♯ in B). Default when unsure: D♭ E♭ F♯ A♭ B♭.
+- **Style: Pop** — major, minor and diminished triads.
+- **Style: Jazz** (default; covers bossa nova) — maj7, 6, m7, m6, 7, m7♭5, dim7, plus 9th/13th versions the mic may hear (Cmaj9, G13).
+- Detection compares chord *families* (Cmaj9 counts as Cmaj7, G13 as G7).
+- The mic also finds your **left-hand bass note** (lowest strong note below middle C), which settles look-alikes: A + C E G is Am7, C + E G A is C6.
+- It leans slightly toward the chord it just suggested.
+- Spelling follows the key (B♭ in F, A♯ in B). Roots from outside the key are flats (D♭7, B♭7), except passing diminished chords (C♯dim7).
 
 ### 3.3 Figuring out the key
 - Score all 24 keys over the **last 6 chords**, with newer chords counting more:
@@ -124,10 +127,15 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 - **Chord outside the key**: if it is major and its resolution a 5th down is in the key, suggest that (E → Am in C). Otherwise suggest home (I), then IV.
 - **Rating your move** (always shown): *strong · common · occasional · unusual · outside the key*.
 
-### 3.5 Showing where fingers go
-- Right hand, **root position**. Every triad has the same "skip a key, skip a key" shape, which is the fastest to learn. Thumb, middle finger, pinky (1-3-5).
-- Two octaves from middle C. Every C key is labelled, with the reminder "C is the white key just left of the two black keys". This is already working in `mictest.html`.
-- The mic can't see which keys you pressed, so "You played" shows that chord's keys in root position.
+### 3.5 Both hands, with fingers
+- **Left hand (blue):** pinky (5) on the root, in the octave below middle C.
+- **Right hand (orange):** a close voicing starting between middle C and the B above it.
+  - **Jazz** uses rootless voicings: 3-5-7-9 or 7-9-3-5, and 3-13-♭7-9 for dominants.
+  - **Pop** uses triads.
+- **Voice leading:** each new chord picks the shape closest to the last one, so the hand barely moves. A ii–V–I is Dm9 F A C E → G13 F A B E → Cmaj9 E G B D.
+- **Finger numbers** on every key: 1 thumb … 5 pinky. Four notes are fingered 1-2-3-5; three notes are 1-3-5, or 1-2-5 when the bottom two notes are close.
+- Three octaves are drawn, from the C below middle C. Every C is labelled, and middle C says "mid C".
+- The mic can't see which keys you pressed, so "You played" shows the app's own voicing of that chord.
 
 ---
 
@@ -167,7 +175,13 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 | Played something else | Named + move rated in "You played"; Next follows from it |
 | Mic blocked | One line saying how to allow it in Chrome |
 
-**Settings:** none in v1, because there's nothing to choose yet. A ⚙ arrives with v2's chord palette and voicing options.
+**Controls:** two buttons in the bottom bar.
+- **Style** switches between Jazz and Pop.
+- **Hints** cycles Show / Wait / Off.
+
+**Next** always shows the best move, plus two alternatives:
+- the next-best chord from the key
+- one colour move from outside it (secondary dominant, tritone sub, backdoor, bossa lift)
 
 ---
 
@@ -198,7 +212,7 @@ chord-coach/
 Built-in browser features used:
 - **Microphone**: `getUserMedia` with voice processing off, read through two Web Audio `AnalyserNode`s (a fine one for pitch, a quick one for strikes)
 - **Screen Wake Lock**: keeps the screen from sleeping while you play
-- **Manifest**: `display: fullscreen`; orientation isn't locked, since both layouts work
+- **Manifest**: `display: fullscreen`, `orientation: landscape` (three octaves for two hands need the width; in a plain Chrome tab, upright still works, just smaller)
 - **localStorage**: remembers your settings
 
 Whole app state:
@@ -225,16 +239,26 @@ Whole app state:
 - Try it on the real keyboard for a week
 - ~~GitHub Pages, so the phone works without the Mac~~
 
-**v2: only what a week of v1 shows you need.**
-- Chords palette: **+7ths** (V7, ii7, Imaj7…) and **+Color** (E7→Am style secondary dominants, borrowed iv / ♭VII / ♭VI). Kept only if the mic tests well with them.
-- Smooth voicing: the inversion closest to your last chord, so your hand barely moves
+**v2: jazz, both hands, fingers.** Done 2026-11-24, after your feedback that the suggestions weren't the progressions you wanted. You like jazz and bossa, but don't want to be limited to them.
+- ~~Style switch: Jazz (default) / Pop~~
+- ~~Jazz moves:~~
+  - ~~circle-of-fifths table (I–vi–ii–V, iii–vi–ii–V, minor ii°–V–i)~~
+  - ~~ii–V, secondary dominants, tritone subs, backdoor ♭VII7~~
+  - ~~bossa lift and turn (I → II7 → ii7 → ♭II7 → I), borrowed minor iv, passing diminished~~
+  - ~~each move named on screen~~
+- ~~Key detection that understands cadences (G7 → C) and isn't thrown off by secondary dominants~~
+- ~~Two-hand voicings with voice leading, and finger numbers on every key~~
+- ~~Left-hand bass detection in the mic~~
+
+**Still open, only if you want it:**
 - "That was I–V–vi–IV, the pop progression": about 8 famous patterns, recognized from your last 4 chords
 - Moves map: the key's 7 chords, showing the moves you've used and the ones you've never tried
 - Auto-fade: once you've played a chord correctly 5 times, its keys stop showing (name only)
+- More styles: Blues (I7–IV7–V7), Soul / neo-soul (maj9, m11, ♭VII), each as another Style button setting
 
 **v3: only if needed.**
 - USB cable via Web MIDI for exact notes (inversions, 7ths, fast playing)
-- Broken-chord (arpeggio) detection, left-hand bass note, key lock
+- Broken-chord (arpeggio) detection, key lock, left hand plays shells (root + 7th)
 
 ---
 

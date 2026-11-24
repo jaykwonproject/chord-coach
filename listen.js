@@ -1,16 +1,16 @@
-// Mic sound -> chord name. Pure functions, so they run in the browser and in `node listen.test.js`.
+// Mic sound -> chord name. The math is pure functions (tested by `node listen.test.js`); startMic() wires it to the phone's mic.
+import { QUALITIES, PALETTES } from './theory.js';
 
 export const NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
 
 // A piano note also rings faintly at its 5th (3rd overtone) and 3rd (5th overtone).
 // ponytail: guessed weights; tune them by watching the bars on the real keyboard.
 const OVERTONE = { 0: 1, 7: 0.35, 4: 0.12 };
-
-const BASIC = { '': [0, 4, 7], m: [0, 3, 7], dim: [0, 3, 6] };
-const EXTRA = { aug: [0, 4, 8], sus2: [0, 2, 7], sus4: [0, 5, 7], 7: [0, 4, 7, 10], maj7: [0, 4, 7, 11], m7: [0, 3, 7, 10] };
-
-const FMIN = 100, FMAX = 2500; // Hz: chord notes and their first overtones
-const PEAK_DB = 30;            // ignore peaks this far below the loudest
+const FMIN = 75, FMAX = 2500; // Hz: left-hand bass up to the right hand's overtones (above mains hum)
+const PEAK_DB = 30;           // ignore peaks this far below the loudest
+const BASS_DB = 20;           // a bass note must be at least this loud, relative to the loudest
+const BASS_BONUS = 0.04;      // chords whose root is the bass note you're holding win close calls (Am7 vs C6)
+const PREFER_BONUS = 0.03;    // and so does the chord the app just asked for
 
 function template(pcs) {
   const t = Array(12).fill(0);
@@ -18,42 +18,57 @@ function template(pcs) {
   return t.map(Math.sqrt);
 }
 
-// Every chord it may answer with, plus lone notes so a single key isn't mistaken for a chord.
-export function candidates(extra = false) {
-  const quals = extra ? { ...BASIC, ...EXTRA } : BASIC;
+// Every chord it may answer with (qualities from theory.js), plus lone notes so a single key isn't mistaken for a chord.
+export function candidates(qualities = PALETTES.pop) {
   const list = [];
   for (let r = 0; r < 12; r++) {
-    list.push({ name: NAMES[r] + ' (one note)', chord: false, root: r, q: null, t: template([r]) });
-    for (const q in quals) list.push({ name: NAMES[r] + q, chord: true, root: r, q, t: template(quals[q].map(i => (r + i) % 12)) });
+    list.push({ name: NAMES[r] + ' (one note)', chord: false, root: r, q: null, fam: null, t: template([r]) });
+    for (const q of qualities) {
+      const { iv, fam } = QUALITIES[q];
+      list.push({ name: NAMES[r] + q, chord: true, root: r, q, fam, t: template(iv.map(i => (r + i) % 12)) });
+    }
   }
   for (const c of list) c.norm = Math.hypot(...c.t);
   return list;
 }
 
-// Spectrum in dB (AnalyserNode.getFloatFrequencyData) -> loudness of each of the 12 note names.
-export function chroma(db, binHz) {
-  const c = Array(12).fill(0);
-  const lo = Math.ceil(FMIN / binHz), hi = Math.floor(FMAX / binHz);
+// Spectrum in dB (AnalyserNode.getFloatFrequencyData) -> peaks that sit on a piano key, low to high: [{midi, db, top}].
+export function peaks(db, binHz) {
+  const lo = Math.ceil(FMIN / binHz), hi = Math.floor(FMAX / binHz), out = [];
   let max = -Infinity;
   for (let i = lo; i <= hi; i++) if (db[i] > max) max = db[i];
   for (let i = lo; i <= hi; i++) {
     const a = db[i - 1], b = db[i], d = db[i + 1];
     if (b < max - PEAK_DB || b <= a || b < d) continue; // only peaks
     const off = 0.5 * (a - d) / (a - 2 * b + d) || 0;    // exact peak position between bins
-    const midi = 69 + 12 * Math.log2((i + off) * binHz / 440);
-    const key = Math.round(midi);
-    if (Math.abs(midi - key) > 0.35) continue;          // between keys: noise, not a note
-    c[((key % 12) + 12) % 12] += 10 ** (b / 20);
+    const midi = 69 + 12 * Math.log2((i + off) * binHz / 440), key = Math.round(midi);
+    if (Math.abs(midi - key) <= 0.35) out.push({ midi: key, db: b, top: max }); // between keys = noise, not a note
   }
+  return out;
+}
+
+// Loudness of each of the 12 note names.
+export function chroma(ps) {
+  const c = Array(12).fill(0);
+  for (const p of ps) c[p.midi % 12] += 10 ** (p.db / 20);
   return c;
 }
 
-// Best match first. score is 0..1 (cosine similarity).
-export function classify(c, list) {
+// The left hand's note: the lowest strong peak below middle C, as 0-11, or -1.
+export function bass(ps) {
+  const p = ps.find(x => x.midi < 60 && x.db >= x.top - BASS_DB);
+  return p ? p.midi % 12 : -1;
+}
+
+// Best match first. score is 0..1 (cosine similarity); rank adds the bass and expected-chord bonuses.
+export function classify(c, list, { bass = -1, prefer = null } = {}) {
   const obs = c.map(Math.sqrt), n = Math.hypot(...obs) || 1;
-  return list
-    .map(k => ({ name: k.name, chord: k.chord, root: k.root, q: k.q, score: obs.reduce((s, v, i) => s + v * k.t[i], 0) / (n * k.norm) }))
-    .sort((a, b) => b.score - a.score);
+  return list.map(k => {
+    const score = obs.reduce((s, v, i) => s + v * k.t[i], 0) / (n * k.norm);
+    const rank = score + (k.root === bass ? BASS_BONUS : 0)
+      + (prefer && k.chord && k.root === prefer.root && k.fam === QUALITIES[prefer.q].fam ? PREFER_BONUS : 0);
+    return { name: k.name, chord: k.chord, root: k.root, q: k.q, score, rank };
+  }).sort((a, b) => b.rank - a.rank);
 }
 
 // ponytail: guessed tuning knobs; re-tune with mictest.html on the real keyboard.
@@ -61,12 +76,13 @@ const ONSET_RATIO = 1.4; // loudness jump that counts as a newly struck chord
 const GATE = 3;          // sound must be this many times louder than the room
 const MIN_SCORE = 0.85;  // how sure it must be before naming a chord
 const RETRY_MS = 250;    // keeps trying this long after a strike, then gives up
-const BASIC_LIST = candidates(false);
+const BASIC_LIST = candidates();
 
 // Opens the mic (call it from a tap). The first second measures the room, so stay quiet.
 // onChord(best) for each struck chord it's sure of, onUnclear(best) when it gives up,
-// onFrame({calibrating, level, room, loud, chroma, ranked}) on every screen frame.
-export async function startMic({ onChord, onUnclear = () => {}, onFrame = () => {}, getList = () => BASIC_LIST }) {
+// onFrame({calibrating, level, room, loud, chroma, bass, ranked}) on every screen frame.
+// getList() picks the chords to listen for; getPrefer() the chord the app expects next (or null).
+export async function startMic({ onChord, onUnclear = () => {}, onFrame = () => {}, getList = () => BASIC_LIST, getPrefer = () => null }) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   const ctx = new AudioContext();
   ctx.resume();
@@ -95,8 +111,9 @@ export async function startMic({ onChord, onUnclear = () => {}, onFrame = () => 
     env = Math.max(level, env * 0.9);
 
     big.getFloatFrequencyData(spec);
-    const c = chroma(spec, binHz), ranked = classify(c, getList());
-    onFrame({ calibrating: false, level, room, loud, chroma: c, ranked });
+    const ps = peaks(spec, binHz), c = chroma(ps), b = bass(ps);
+    const ranked = classify(c, getList(), { bass: b, prefer: getPrefer() });
+    onFrame({ calibrating: false, level, room, loud, chroma: c, bass: b, ranked });
 
     if (!armed || now - struckAt < windowMs + 20) return;
     const best = ranked[0];
