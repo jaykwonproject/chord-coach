@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#121212">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<title>Chord Coach</title>
+<style>
+  :root { color-scheme: dark; --bg: #121212; --fg: #ececec; --dim: #8a8a8a; --line: #333; --accent: #f5a623; --ok: #3dbe6b; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--fg);
+    font: 18px/1.3 Roboto, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  p { margin: 0; }
+  button { font: inherit; color: var(--fg); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 4px 14px; min-height: 40px; }
+
+  /* Landscape (phone on the music stand): played | next on top, big keyboard below. */
+  #app { height: 100%; display: grid; gap: 6px 32px; padding: 10px 20px 0;
+    grid-template: "played next" auto "keys keys" minmax(0, 1fr) "foot foot" auto / minmax(0, 2fr) minmax(0, 3fr); }
+  #played { grid-area: played; min-width: 0; }
+  #next { grid-area: next; min-width: 0; }
+  #keys { grid-area: keys; }
+  footer { grid-area: foot; }
+
+  .label { color: var(--dim); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+  .row { display: flex; align-items: baseline; gap: 14px; margin: 2px 0; }
+  .name { font-weight: 700; line-height: 1; white-space: nowrap; }
+  .name small { font-size: .5em; font-weight: 600; }
+  #pName { font-size: 36px; }
+  #nName { font-size: 80px; }
+  .tag { color: var(--dim); }
+  .ok { color: var(--ok); }
+  .dim { color: var(--dim); }
+  #alts { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--dim); }
+  #alts button { font-size: 26px; font-weight: 700; }
+
+  .keys { display: block; width: 100%; height: 100%; min-height: 0; }
+  #pKeys { width: auto; height: 44px; margin: 6px 0 4px; }
+  .keys .w { fill: #f4f1ea; stroke: var(--bg); stroke-width: 2; }
+  .keys .b { fill: #2a2a2a; stroke: var(--bg); stroke-width: 2; }
+  .keys .on { fill: var(--accent); }
+  .keys .hit { fill: var(--ok); }
+  .keys .you { fill: #a3a8ad; }
+  .keys text { font: 700 18px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
+  .keys text.c { font-weight: 400; fill: var(--dim); }
+  #pKeys text { display: none; }
+
+  footer { display: flex; align-items: center; gap: 16px; padding: 4px 0 8px; color: var(--dim); white-space: nowrap; }
+  #hints { margin-left: auto; }
+  #ear i { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--line); }
+  #ear.on i { background: var(--accent); }
+
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+    gap: 16px; padding: 24px max(24px, 8vw); background: var(--bg); }
+  #start h1 { margin: 0; font-size: 40px; }
+  #go { border-color: var(--accent); color: var(--accent); font-size: 24px; padding: 10px 36px; }
+
+  /* Portrait (phone upright): next, big keyboard, then what you played. */
+  @media (orientation: portrait) {
+    #app { grid-template: "next" auto "keys" auto "played" auto "." 1fr "foot" auto / 100%; gap: 20px; padding-top: 20px; }
+    #nName { font-size: 104px; }
+    #keys { height: auto; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="played">
+    <p class="label">You played</p>
+    <div class="row"><span class="name" id="pName">–</span><span class="tag" id="pTag"></span></div>
+    <svg class="keys" id="pKeys" viewBox="0 0 560 160"></svg>
+    <p class="tag" id="pMove">Strike a chord and hold it a moment.</p>
+  </section>
+  <section id="next">
+    <p class="label" id="nLabel">Next</p>
+    <div class="row"><span class="name" id="nName"></span><span id="alts"></span></div>
+    <p class="tag" id="nTag"></p>
+  </section>
+  <svg class="keys" id="keys" viewBox="0 0 560 160"></svg>
+  <footer>
+    <span id="key">Key: not yet</span>
+    <span id="ear"><i></i>listening</span>
+    <button id="hints"></button>
+  </footer>
+</div>
+<div id="start">
+  <h1>Chord Coach</h1>
+  <p>Keyboard on a piano sound, rhythm and accompaniment off, medium volume.<br>
+    Strike each chord and hold it a moment. Copy the orange keys, or play anything you like.</p>
+  <button id="go">Start</button>
+  <p class="dim" id="startMsg">Chrome will ask to use the microphone. Allow it, then stay quiet for a second.</p>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

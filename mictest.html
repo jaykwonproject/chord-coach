@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mic Chord Test</title>
+<style>
+  :root { color-scheme: dark; --bg: #121212; --fg: #ececec; --dim: #8a8a8a; --accent: #f5a623; --ok: #3dbe6b; --bad: #e5484d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 18px/1.4 Roboto, system-ui, sans-serif; }
+  main { display: grid; gap: 8px 40px; max-width: 1000px; margin: auto; }
+  @media (min-width: 700px) { main { grid-template-columns: 1fr 1fr; } .wide { grid-column: 1 / -1; } }
+  p { margin: 0 0 12px; }
+  .label { margin: 0; color: var(--dim); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+  .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 20px; }
+  .big { font-size: 72px; font-weight: 700; line-height: 1.1; }
+  #target { color: var(--accent); }
+  .ok { color: var(--ok); }
+  .bad { color: var(--bad); }
+  .dim { color: var(--dim); font-size: 16px; }
+  button { font: inherit; color: var(--fg); background: none; border: 1px solid var(--dim); border-radius: 6px; padding: 8px 18px; }
+  #start { border-color: var(--accent); color: var(--accent); font-size: 22px; padding: 14px 28px; }
+  .keys { display: block; width: 100%; margin: 4px 0 8px; }
+  .keys .w { fill: #f4f1ea; stroke: var(--bg); stroke-width: 2; }
+  .keys .b { fill: #2a2a2a; stroke: var(--bg); stroke-width: 2; }
+  .keys .on { fill: var(--accent); }
+  .keys text { font: 700 16px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
+  .keys text.c { font-weight: 400; fill: var(--dim); }
+  #bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin: 8px 0 12px; }
+  #bars div { display: flex; flex-direction: column; justify-content: flex-end; height: 140px; text-align: center; font-size: 14px; color: var(--dim); }
+  #bars i { display: block; height: 0; margin-bottom: 4px; background: var(--fg); }
+  #bars i.want { background: var(--accent); }
+  #log { margin: 12px 0 0; padding: 0; list-style: none; color: var(--dim); font-size: 16px; }
+  #log li:first-child { color: var(--fg); }
+  input { width: 20px; height: 20px; vertical-align: -3px; }
+</style>
+</head>
+<body>
+<main>
+  <section class="wide">
+    <p class="row"><button id="start">Start listening</button><span class="dim" id="status">Keyboard on a piano sound, rhythm and accompaniment off, medium volume. Phone on the music stand.</span></p>
+    <p>You don't need to know any chords. Press the <b style="color: var(--accent)">orange keys</b> together and hold them a moment. A green ✓ means the mic heard the chord right. A red ✗ means it didn't, or a finger slipped, so check the keys and play again.</p>
+    <p class="label">Play</p>
+    <p class="row"><span class="big" id="target"></span><span id="tally">0 / 0 right</span><button id="skip">Skip</button></p>
+    <svg class="keys" id="keys" viewBox="0 0 560 160"></svg>
+    <p class="dim">C is the white key just left of the two black keys. Any C on your keyboard works. Right hand: thumb, middle finger, pinky.</p>
+  </section>
+  <section>
+    <p class="label">Heard</p>
+    <div class="big" id="heard">–</div>
+    <p class="dim" id="top">best guesses show here</p>
+  </section>
+  <section>
+    <p class="label">What the mic hears (orange = notes you should be playing)</p>
+    <div id="bars"></div>
+    <label class="dim"><input type="checkbox" id="extra"> Also try 7ths and sus chords</label>
+    <ol id="log"></ol>
+  </section>
+</main>
+<script type="module">
+import { NAMES, candidates, startMic } from './listen.js';
+import { drawKeys } from './keys.js';
+import { keysOf, spell, rootName, same } from './theory.js';
+
+const DRILL = [[0, ''], [2, 'm'], [4, 'm'], [5, ''], [7, ''], [9, 'm'], [2, ''], [4, ''], [9, ''], [10, ''], [0, 'm'], [7, 'm']]
+  .map(([root, q]) => ({ root, q }));
+const nameOf = c => rootName(c, null) + c.q;
+
+const $ = id => document.getElementById(id);
+let list = candidates(false), target, hits = 0, tries = 0, countFrom = 0;
+
+$('bars').innerHTML = NAMES.map(n => `<div><i></i>${n}</div>`).join('');
+const bars = [...$('bars').querySelectorAll('i')];
+$('extra').onchange = e => { list = candidates(e.target.checked); };
+$('skip').onclick = nextTarget;
+nextTarget();
+
+function nextTarget() {
+  let t;
+  do t = DRILL[Math.floor(Math.random() * DRILL.length)]; while (t === target);
+  target = t;
+  $('target').textContent = nameOf(t);
+  drawKeys($('keys'), keysOf(t), spell(t, null));
+  bars.forEach((b, i) => b.classList.toggle('want', keysOf(t).some(m => m % 12 === i)));
+  countFrom = performance.now() + 500; // the last chord's ringing doesn't count
+}
+
+function addLog(text) {
+  const li = document.createElement('li');
+  li.textContent = text;
+  $('log').prepend(li);
+  $('log').children[8]?.remove();
+}
+
+function commit(best) {
+  const counts = performance.now() > countFrom, ok = same(best, target);
+  $('heard').textContent = (counts ? (ok ? '✓ ' : '✗ ') : '') + best.name;
+  $('heard').className = 'big' + (counts ? (ok ? ' ok' : ' bad') : '');
+  addLog(`${best.name} · ${best.score.toFixed(2)}` + (counts ? (ok ? ' ✓' : ` ✗ wanted ${nameOf(target)}`) : ''));
+  if (!counts) return;
+  tries++;
+  if (ok) hits++;
+  $('tally').textContent = `${hits} / ${tries} right`;
+  if (ok) nextTarget();
+}
+
+function onFrame(f) {
+  if (f.calibrating) { $('status').textContent = 'Measuring room noise, stay quiet…'; return; }
+  const peak = Math.max(...f.chroma) || 1;
+  bars.forEach((b, i) => { b.style.height = 110 * Math.sqrt(f.chroma[i] / peak) + 'px'; });
+  $('status').textContent = `Listening · level ${f.level.toFixed(3)} · room ${f.room.toFixed(3)}`;
+  $('top').textContent = f.loud ? f.ranked.slice(0, 3).map(r => `${r.name} ${r.score.toFixed(2)}`).join(' · ') : 'quiet';
+}
+
+$('start').onclick = async () => {
+  try {
+    await startMic({ onChord: commit, onFrame, getList: () => list, onUnclear: b => addLog(`? unclear, best guess ${b.name} ${b.score.toFixed(2)}`) });
+    navigator.wakeLock?.request('screen').catch(() => {});
+    $('start').hidden = true;
+  } catch (e) {
+    $('status').textContent = `Could not open the mic: ${e.message}. Allow the mic, and open this page through localhost or https.`;
+  }
+};
+</script>
+</body>
+</html>
