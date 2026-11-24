@@ -34,30 +34,41 @@ What the app does **not** have: songs, lessons, scores, streaks, accounts.
 
 ---
 
-## 2. Core loop (one screen, no modes)
+## 2. Core loop: practise, then move on when you're ready
+
+Changed 2026-11-24, after your feedback. Before, the app jumped to a new chord every time you played, which was too fast.
 
 ```
-show NEXT chord ──► you play something
-                       │
-       ┌───────────────┴────────────────┐
-  it's the suggestion            it's something else
-  green ✓                        app names it + rates the move
-       └───────────────┬────────────────┘
-          it becomes "YOU PLAYED" (name + its keys)
-          new NEXT is suggested from there ──► repeat
+PRACTISE one chord (coloured keys, fingers) ──► play it, dots fill ●●○
+        │ after 3 plays
+        ▼
+NEXT chord appears in grey (keys + name), plus 2 alternatives to tap
+        │ keep practising as long as you like…
+        ▼
+play the grey chord ──► it becomes the one you practise (●○○) ──► repeat
 ```
 
-Whatever you play counts as right. The app follows you and never says "wrong".
+- **A different chord once** (a slip, or the mic mishearing): it's named in "You played", and nothing else changes.
+- **The same different chord twice in a row:** the app switches to practising that chord, with 2 plays already counted. You can still wander off and it follows.
+- Nothing is ever "wrong".
 
-The **Hints** button is the only control you touch while playing (tap to cycle):
+**Hints** (tap to cycle) sets how much of the next chord you see:
 
-| Hints    | What happens                                                         | When           |
-|----------|----------------------------------------------------------------------|----------------|
-| **Show** | Next chord + keys shown right away                                   | start here     |
-| **Wait** | Next stays hidden ("your move…"); appears if you don't play for 3 s  | recall practice|
-| **Off**  | No suggestions. The app only names chords and rates your moves       | free play      |
+| Hints    | What happens                                                         | When              |
+|----------|----------------------------------------------------------------------|-------------------|
+| **Keys** | Next chord's name + grey keys after 3 plays                          | start here        |
+| **Name** | Next chord's name only; find the keys yourself                       | learning shapes   |
+| **Off**  | Free play: no practising; the app follows every chord, names it, rates the move | the goal |
 
-Moving from Show to Off is your progress. When Off feels easy, you've reached the goal.
+Moving from Keys to Off is your progress.
+
+**Level** (tap to cycle) sets how many notes you play:
+
+| Level      | Jazz                                           | Pop                    |
+|------------|------------------------------------------------|------------------------|
+| **Easy**   | left pinky on the root + right hand 3rd & 7th (2 notes, "shells") | right-hand triad only |
+| **Medium** | left root + right hand 3 notes above the root  | left root + right triad |
+| **Full**   | left root + 4-note rootless jazz voicing       | left root + right triad |
 
 ---
 
@@ -171,15 +182,17 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 | First open | Big "Start" (Chrome needs one tap before it can use the mic), then 1 s "stay quiet" while it measures the room. Next shows **C** (all white keys). |
 | Single key | Shown as a note, not a chord: `C (one note)` in grey |
 | Unclear sound | Nothing changes; it never guesses |
-| Played the target | Keys go green ✓ for 250 ms, then the next chord appears |
-| Played something else | Named + move rated in "You played"; Next follows from it |
+| Played the chord you're practising | Keys flash green, one more dot fills (●●○); after 3 the next chord shows in grey |
+| Played the grey chord | It becomes the one you practise |
+| Played something else | Named in "You played"; twice in a row switches to practising it |
 | Mic blocked | One line saying how to allow it in Chrome |
 
-**Controls:** two buttons in the bottom bar.
-- **Style** switches between Jazz and Pop.
-- **Hints** cycles Show / Wait / Off.
+**Controls:** three buttons in the bottom bar, all remembered between sessions.
+- **Style:** Jazz / Pop. Changing it starts over on C.
+- **Level:** Easy / Medium / Full.
+- **Hints:** Keys / Name / Off.
 
-**Next** always shows the best move, plus two alternatives:
+**Then** (once unlocked) shows the best move, plus two alternatives you can tap:
 - the next-best chord from the key
 - one colour move from outside it (secondary dominant, tritone sub, backdoor, bossa lift)
 

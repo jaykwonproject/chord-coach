@@ -8,7 +8,8 @@
 <link rel="icon" href="icon.png">
 <title>Chord Coach</title>
 <style>
-  :root { color-scheme: dark; --bg: #121212; --fg: #ececec; --dim: #8a8a8a; --line: #333; --accent: #f5a623; --left: #5aa9e6; --ok: #3dbe6b; }
+  :root { color-scheme: dark; --bg: #121212; --fg: #ececec; --dim: #8a8a8a; --line: #333; --accent: #f5a623; --left: #5aa9e6; --ok: #3dbe6b;
+    --ghost: #9a9fa5; --ghost-text: #b8bcc0; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--fg);
@@ -30,14 +31,18 @@
   .name small { font-size: .5em; font-weight: 600; }
   .name .msg { font-size: .45em; font-weight: 600; }
   #pName { font-size: 36px; }
-  #nName { font-size: 80px; }
+  #nName { font-size: 64px; }
   .tag { color: var(--dim); }
   #nTag { color: var(--fg); }
   #pMove, #nSub { font-size: 16px; }
   .ok { color: var(--ok); }
   .dim { color: var(--dim); }
-  #alts { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--dim); }
-  #alts button { font-size: 24px; font-weight: 700; }
+  .reps { margin-left: 16px; font-size: 22px; letter-spacing: 4px; color: var(--accent); vertical-align: middle; }
+  #then { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 6px; font-size: 16px; color: var(--ghost-text); }
+  #then b { color: var(--fg); font-size: 20px; }
+  #then b small { font-size: .7em; }
+  .alts { display: flex; align-items: center; gap: 6px; }
+  .alts button { min-height: 32px; padding: 0 10px; font-weight: 700; }
 
   .keys { display: block; width: 100%; height: 100%; min-height: 0; }
   #pKeys { width: auto; height: 40px; margin: 6px 0 4px; }
@@ -47,6 +52,7 @@
   .keys .lh { fill: var(--left); }
   .keys .hit { fill: var(--ok); }
   .keys .you { fill: #a3a8ad; }
+  .keys .ghost { fill: var(--ghost); }
   .keys text { font: 600 14px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
   .keys text.f { font-size: 24px; font-weight: 700; }
   .keys text.c { font-weight: 400; fill: var(--dim); }
@@ -55,7 +61,8 @@
   footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 4px 0 8px; color: var(--dim); white-space: nowrap; }
   .legend i, #ear i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 6px 0 0; }
   .legend .l { background: var(--left); }
-  .legend .r { background: var(--accent); margin-left: 10px; }
+  .legend .r, .legend .g { background: var(--accent); margin-left: 10px; }
+  .legend .g { background: var(--ghost); }
   #ear i { background: var(--line); }
   #ear.on i { background: var(--fg); }
   #style { margin-left: auto; }
@@ -82,25 +89,28 @@
     <p class="tag" id="pMove">Strike a chord and hold it a moment.</p>
   </section>
   <section id="next">
-    <p class="label" id="nLabel">Next</p>
-    <div class="row"><span class="name" id="nName"></span><span id="alts"></span></div>
+    <p class="label" id="nLabel">Practise</p>
+    <div class="row"><span class="name" id="nName"></span></div>
     <p id="nTag"></p>
     <p class="tag" id="nSub"></p>
+    <div id="then"></div>
   </section>
   <svg class="keys" id="keys" viewBox="0 0 840 160"></svg>
   <footer>
     <span id="key">Key: not yet</span>
-    <span class="legend"><i class="l"></i>left hand<i class="r"></i>right hand</span>
+    <span class="legend"><i class="l"></i>left<i class="r"></i>right<i class="g"></i>next</span>
     <span id="ear" title="lights up when it hears you"><i></i></span>
     <button id="style"></button>
+    <button id="level"></button>
     <button id="hints"></button>
   </footer>
 </div>
 <div id="start">
   <h1>Chord Coach</h1>
   <p>Keyboard on a piano sound, rhythm and accompaniment off, medium volume.<br>
-    Strike each chord with both hands and hold it a moment. Follow the suggestions, or play anything you like.</p>
-  <p class="dim">Blue keys are your left hand, orange your right. Big numbers are fingers: 1 thumb, 2 index, 3 middle, 4 ring, 5 pinky.</p>
+    Play each chord a few times. After 3, the next chord shows in grey: move to it whenever you’re ready.</p>
+  <p class="dim">Blue keys are your left hand, orange your right. Big numbers are fingers: 1 thumb, 2 index, 3 middle, 4 ring, 5 pinky.
+    Too hard or too easy? The Level button at the bottom changes how many notes you play.</p>
   <button id="go">Start</button>
   <p class="dim" id="startMsg">Chrome will ask to use the microphone. Allow it, then stay quiet for a second.</p>
 </div>

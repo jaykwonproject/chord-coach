@@ -19,13 +19,15 @@ function template(pcs) {
 }
 
 // Every chord it may answer with (qualities from theory.js), plus lone notes so a single key isn't mistaken for a chord.
+// 4-note chords also get a version without the 5th, the way jazz voicings (and easy shells) leave it out.
 export function candidates(qualities = PALETTES.pop) {
   const list = [];
   for (let r = 0; r < 12; r++) {
     list.push({ name: NAMES[r] + ' (one note)', chord: false, root: r, q: null, fam: null, t: template([r]) });
     for (const q of qualities) {
       const { iv, fam } = QUALITIES[q];
-      list.push({ name: NAMES[r] + q, chord: true, root: r, q, fam, t: template(iv.map(i => (r + i) % 12)) });
+      const shapes = iv.length > 3 && iv.includes(7) ? [iv, iv.filter(i => i !== 7)] : [iv];
+      for (const s of shapes) list.push({ name: NAMES[r] + q, chord: true, root: r, q, fam, t: template(s.map(i => (r + i) % 12)) });
     }
   }
   for (const c of list) c.norm = Math.hypot(...c.t);
@@ -61,12 +63,13 @@ export function bass(ps) {
 }
 
 // Best match first. score is 0..1 (cosine similarity); rank adds the bass and expected-chord bonuses.
+// prefer: a chord or a list of chords the app is expecting.
 export function classify(c, list, { bass = -1, prefer = null } = {}) {
-  const obs = c.map(Math.sqrt), n = Math.hypot(...obs) || 1;
+  const obs = c.map(Math.sqrt), n = Math.hypot(...obs) || 1, wanted = [prefer].flat().filter(Boolean);
   return list.map(k => {
     const score = obs.reduce((s, v, i) => s + v * k.t[i], 0) / (n * k.norm);
     const rank = score + (k.root === bass ? BASS_BONUS : 0)
-      + (prefer && k.chord && k.root === prefer.root && k.fam === QUALITIES[prefer.q].fam ? PREFER_BONUS : 0);
+      + (k.chord && wanted.some(p => k.root === p.root && k.fam === QUALITIES[p.q].fam) ? PREFER_BONUS : 0);
     return { name: k.name, chord: k.chord, root: k.root, q: k.q, score, rank };
   }).sort((a, b) => b.rank - a.rank);
 }
@@ -81,7 +84,7 @@ const BASIC_LIST = candidates();
 // Opens the mic (call it from a tap). The first second measures the room, so stay quiet.
 // onChord(best) for each struck chord it's sure of, onUnclear(best) when it gives up,
 // onFrame({calibrating, level, room, loud, chroma, bass, ranked}) on every screen frame.
-// getList() picks the chords to listen for; getPrefer() the chord the app expects next (or null).
+// getList() picks the chords to listen for; getPrefer() the chord(s) the app expects (or null).
 export async function startMic({ onChord, onUnclear = () => {}, onFrame = () => {}, getList = () => BASIC_LIST, getPrefer = () => null }) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   const ctx = new AudioContext();

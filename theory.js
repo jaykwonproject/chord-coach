@@ -49,7 +49,7 @@ const MOVES = {
 // Jazz leans on the circle of fifths: I–vi–ii–V, iii–vi–ii–V, and minor ii°–V–i.
 const MOVES_JAZZ = {
   major: {
-    I: { ii: 3, vi: 3, IV: 2, iii: 2, V: 1 }, ii: { V: 3, iii: 1 }, iii: { vi: 3, ii: 1 },
+    I: { ii: 3, vi: 3, IV: 2, iii: 2, V: 1 }, ii: { V: 3, iii: 1, vi: 1 }, iii: { vi: 3, ii: 1 },
     IV: { iii: 2, V: 2, I: 2, ii: 1 }, V: { I: 3, vi: 2 }, vi: { ii: 3, IV: 2, V: 1 }, 'vii°': { I: 2 },
   },
   minor: {
@@ -174,16 +174,23 @@ export function rateMove(prev, chord, key, style = 'jazz') {
 
 // Two hands: left pinky on the root (octave below middle C), right hand a close voicing starting between
 // middle C and B above it, chosen to move as little as possible from `prev` (the last right-hand notes).
-const JAZZ_FORMS = { // rootless voicings, two shapes each (3rd on the bottom, or 7th on the bottom)
+// Levels: easy = 2-note shells for 7th chords (3rd + 7th), right hand alone for triads;
+//         medium = 3 notes above the root; full = 4-note rootless jazz voicings.
+const ROOTLESS = { // two shapes each: 3rd on the bottom, or 7th on the bottom
   maj7: [[4, 7, 11, 14], [11, 14, 16, 19]], 6: [[4, 7, 9, 14], [9, 14, 16, 19]],
   m7: [[3, 7, 10, 14], [10, 14, 15, 19]], m6: [[3, 7, 9, 14], [9, 14, 15, 19]],
   7: [[4, 9, 10, 14], [10, 14, 16, 21]], 'm7♭5': [[3, 6, 10, 12], [10, 12, 15, 18]], dim7: [[3, 6, 9, 12], [0, 3, 6, 9]],
 };
-JAZZ_FORMS.maj9 = JAZZ_FORMS.maj7; JAZZ_FORMS.m9 = JAZZ_FORMS.m7; JAZZ_FORMS[9] = JAZZ_FORMS[13] = JAZZ_FORMS[7];
-const triadForms = iv => [iv, [iv[1], iv[2], iv[0] + 12], [iv[2], iv[0] + 12, iv[1] + 12]];
+const UPPER = { maj7: [4, 7, 11], 6: [4, 7, 9], m7: [3, 7, 10], m6: [3, 7, 9], 7: [4, 7, 10], 'm7♭5': [3, 6, 10], dim7: [3, 6, 9] };
+const SHELL = { maj7: [4, 11], 6: [4, 9], m7: [3, 10], m6: [3, 9], 7: [4, 10] };
+const BASE = { maj9: 'maj7', m9: 'm7', 9: '7', 13: '7' };
+export const LEVELS = ['easy', 'medium', 'full'];
+const rotations = iv => iv.map((_, k) => [...iv.slice(k), ...iv.slice(0, k).map(i => i + 12)]); // a shape and its inversions
 
-export function voice(c, prev) {
-  const forms = JAZZ_FORMS[c.q] || triadForms(QUALITIES[c.q].iv);
+export function voice(c, prev, level = 'full') {
+  const b = BASE[c.q] ?? c.q, seventh = !!UPPER[b];
+  const forms = !seventh ? rotations(QUALITIES[c.q].iv)
+    : level === 'full' ? ROOTLESS[b] : rotations(level === 'easy' && SHELL[b] ? SHELL[b] : UPPER[b]);
   let rh, best = Infinity;
   forms.forEach((form, fi) => {
     for (let k = -12; k <= 72; k += 12) {
@@ -195,10 +202,11 @@ export function voice(c, prev) {
       if (cost < best) { rh = n; best = cost; }
     }
   });
-  const fingers = rh.length === 4 ? [1, 2, 3, 5] : [1, rh[1] - rh[0] <= 3 ? 2 : 3, 5];
+  const fingers = rh.length === 4 ? [1, 2, 3, 5] : rh.length === 3 ? [1, rh[1] - rh[0] <= 3 ? 2 : 3, 5] : [1, rh[1] - rh[0] <= 5 ? 4 : 5];
   const core = QUALITIES[c.q].iv.map(i => i % 12);
   const extra = [...new Set(rh.map(x => (x - c.root + 120) % 12).filter(i => !core.includes(i)))].map(i => ({ 2: '9', 9: '13' })[i]).filter(Boolean).sort((a, b) => a - b);
-  return { lh: [48 + c.root], lhFingers: [5], rh, rhFingers: fingers, extra };
+  const lh = level === 'easy' && !seventh ? [] : [48 + c.root]; // easy triads: right hand only
+  return { lh, lhFingers: lh.map(() => 5), rh, rhFingers: fingers, extra };
 }
 
 // Spelling: sharps or flats depending on the key, and chord notes by letter (E major is E G♯ B, not E A♭ B).

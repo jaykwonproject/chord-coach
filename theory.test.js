@@ -51,6 +51,14 @@ assert.deepEqual(voice(ch(0)).rh, [60, 64, 67]);                                
 assert.deepEqual(voice(ch(0)).rhFingers, [1, 3, 5]);
 assert.deepEqual(voice(ch(5), [60, 64, 67]).rh, [60, 65, 69]);                     // C -> F: closest shape is C F A
 assert.deepEqual(voice(ch(5), [60, 64, 67]).rhFingers, [1, 3, 5]);
+// Easy: 2-note shells (3rd + 7th) under a left-hand root; a ii–V–I moves one finger at a time
+const e1 = voice(ch(2, 'm7'), null, 'easy'), e2 = voice(ch(7, '7'), e1.rh, 'easy'), e3 = voice(ch(0, 'maj7'), e2.rh, 'easy');
+assert.equal(e1.rh.length, 2);
+assert.deepEqual(e1.lh, [50]);
+assert.ok(moved(e1.rh, e2.rh) <= 1 && moved(e2.rh, e3.rh) <= 1, `${e1.rh} ${e2.rh} ${e3.rh}`);
+assert.deepEqual(voice(ch(0), null, 'easy').lh, []);                               // easy triad: right hand only
+// Medium: 3 notes above the root
+assert.equal(voice(ch(7, '7'), null, 'medium').rh.length, 3);
 
 // Spelling
 assert.deepEqual(spell(ch(4), C_MAJOR), ['E', 'G♯', 'B']);

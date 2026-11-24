@@ -43,4 +43,10 @@ assert.match(famOf([48, 64, 67, 71, 74]), /^0:maj(7|9)$/);     // C + E G B D = 
 assert.equal(heard([57, 60, 64, 67], JAZZ), 'Am7');            // A + C E G: the bass says Am7, not C6
 assert.equal(heard([48, 64, 67, 69], JAZZ), 'C6');             // C + E G A: the bass says C6, not Am7
 assert.equal(heard([55, 59, 62, 65], JAZZ), 'G7');
+
+// Easy jazz: left-hand root + right-hand 3rd and 7th (shell voicings, no 5th)
+assert.match(famOf([50, 65, 72]), /^2:m(7|9)$/);               // D + F C = Dm7
+assert.match(famOf([55, 65, 71]), /^7:(7|9|13)$/);             // G + F B = G7
+assert.match(famOf([48, 64, 71]), /^0:maj(7|9)$/);             // C + E B = Cmaj7
+assert.match(famOf([57, 67, 72]), /^9:m(7|9)$/);               // A + G C = Am7
 console.log('listen ok');
