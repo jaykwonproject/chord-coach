@@ -180,7 +180,7 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 
 ### Phone
 - Chrome was removed by the debloat and restored on 2026-11-24 with `../restore.sh com.android.chrome`. It's now Chrome 157.
-- Testing right now runs over Wi-Fi debugging, which needs the Mac on and on the same Wi-Fi. It switches itself off when the phone restarts.
+- The app loads from GitHub Pages, so the Mac isn't needed. For local testing, serve this folder and run `adb reverse tcp:8000 tcp:8000`, then open `localhost:8000` on the phone.
 
 ### Stack: no framework, no build step, no dependencies
 ```
@@ -209,7 +209,9 @@ Whole app state:
 ```
 
 ### Hosting
-The phone has to load the app without the Mac. Plan: **GitHub Pages**, a public repo containing only `chord-coach/`. It's free and serves HTTPS, which the mic requires. Open the URL in Chrome on the Note 9, tap **Add to Home screen**, and it opens fullscreen like a normal app. Publishing needs your OK when v1 is ready.
+**Live at https://jaykwonproject.github.io/chord-coach/**, served by GitHub Pages from the public repo `jaykwonproject/chord-coach` (`main` branch, root folder). It's free and serves HTTPS, which the mic requires.
+- Open the URL in Chrome on the Note 9, tap **Add to Home screen**, and it opens fullscreen like a normal app.
+- To update: push to `main`. Pages redeploys in about a minute.
 
 ---
 
@@ -221,7 +223,7 @@ The phone has to load the app without the Mac. Plan: **GitHub Pages**, a public 
 - ~~Layout: You played with its small keyboard, Next with the big keyboard, move rating, Hints Show/Wait/Off~~ (`index.html`, `app.js`, `keys.js`)
 - ~~Wake lock, PWA manifest, icon~~
 - Try it on the real keyboard for a week
-- GitHub Pages, so the phone works without the Mac (needs your OK)
+- ~~GitHub Pages, so the phone works without the Mac~~
 
 **v2: only what a week of v1 shows you need.**
 - Chords palette: **+7ths** (V7, ii7, Imaj7…) and **+Color** (E7→Am style secondary dominants, borrowed iv / ♭VII / ♭VI). Kept only if the mic tests well with them.
