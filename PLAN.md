@@ -238,7 +238,10 @@ Whole app state:
 ### Hosting
 **Live at https://jaykwonproject.github.io/chord-coach/**, served by GitHub Pages from the public repo `jaykwonproject/chord-coach` (`main` branch, root folder). It's free and serves HTTPS, which the mic requires.
 - Open the URL in Chrome on the Note 9, tap **Add to Home screen**, and it opens fullscreen like a normal app.
-- To update: push to `main`. Pages redeploys in about a minute.
+- To update:
+  1. Bump `v=` in the import map in `index.html`.
+  2. Push to `main`. Pages redeploys in about a minute.
+- Why the version bump: Pages lets browsers keep files for 10 minutes, and a refresh only re-fetches the page, not its code files. Without a new `v=`, a phone can run the new page with old code. The bottom bar shows which version is running.
 
 ---
 

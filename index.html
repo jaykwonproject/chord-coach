@@ -66,6 +66,7 @@
   #ear i { background: var(--line); }
   #ear.on i { background: var(--fg); }
   #style { margin-left: auto; }
+  #ver { font-size: 12px; }
 
   #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
     gap: 14px; padding: 24px max(24px, 8vw); background: var(--bg); }
@@ -103,6 +104,7 @@
     <button id="style"></button>
     <button id="level"></button>
     <button id="hints"></button>
+    <span id="ver"></span>
   </footer>
 </div>
 <div id="start">
@@ -114,6 +116,10 @@
   <button id="go">Start</button>
   <p class="dim" id="startMsg">Chrome will ask to use the microphone. Allow it, then stay quiet for a second.</p>
 </div>
-<script type="module" src="app.js"></script>
+<!-- Release: bump v= here so phones fetch the new code instead of a cached copy (GitHub Pages caches files for 10 min). -->
+<script type="importmap">
+{ "imports": { "./app.js": "./app.js?v=8", "./listen.js": "./listen.js?v=8", "./theory.js": "./theory.js?v=8", "./keys.js": "./keys.js?v=8" } }
+</script>
+<script type="module">import './app.js';</script>
 </body>
 </html>

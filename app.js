@@ -3,7 +3,7 @@ import { drawKeys } from './keys.js';
 import { inferKey, suggest, rateMove, label, same, voice, noteName, rootName, keyName, PALETTES } from './theory.js';
 
 const REPS = 3; // ponytail: plays of a chord before the next one shows in grey; make it a setting if 3 feels wrong
-const HINTS = { keys: 'Keys', name: 'Name', off: 'Off' }; // how much of the next chord to show; Off = free play
+const HINTS = { keys: 'Next: keys', name: 'Next: name', off: 'Free play' }; // how much of the next chord to show
 const STYLES = { jazz: 'Jazz', pop: 'Pop' };
 const LEVELS = { easy: 'Easy', medium: 'Medium', full: 'Full' };
 const LISTS = { jazz: candidates(PALETTES.jazz), pop: candidates(PALETTES.pop) };
@@ -94,7 +94,7 @@ function freePlay(chord) {
 }
 
 function render() {
-  $('hints').textContent = 'Hints: ' + HINTS[hints];
+  $('hints').textContent = HINTS[hints];
   $('style').textContent = STYLES[style];
   $('level').textContent = LEVELS[level];
   $('key').textContent = key ? 'Key of ' + keyName(key) : 'Key: not yet';
@@ -189,6 +189,8 @@ $('go').onclick = async () => {
     $('go').disabled = false;
   }
 };
+
+$('ver').textContent = 'v' + (new URL(import.meta.url).searchParams.get('v') ?? '?'); // which code the phone is running
 
 reset();
 render();
