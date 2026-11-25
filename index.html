@@ -9,7 +9,7 @@
 <title>Chord Coach</title>
 <style>
   :root { color-scheme: dark; --bg: #121212; --fg: #ececec; --dim: #8a8a8a; --line: #333; --accent: #f5a623; --left: #5aa9e6; --ok: #3dbe6b;
-    --ghost: #9a9fa5; --ghost-text: #b8bcc0; }
+    --next: #f0509b; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); color: var(--fg);
@@ -38,9 +38,9 @@
   .ok { color: var(--ok); }
   .dim { color: var(--dim); }
   .reps { margin-left: 16px; font-size: 22px; letter-spacing: 4px; color: var(--accent); vertical-align: middle; }
-  #then { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 6px; font-size: 16px; color: var(--ghost-text); }
-  #then b { color: var(--fg); font-size: 20px; }
-  #then b small { font-size: .7em; }
+  #then { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 6px; font-size: 16px; color: var(--fg); }
+  #then b { color: var(--next); font-size: 30px; margin: 0 6px; }
+  #then b small { font-size: .6em; }
   .alts { display: flex; align-items: center; gap: 6px; }
   .alts button { min-height: 32px; padding: 0 10px; font-weight: 700; }
 
@@ -52,7 +52,7 @@
   .keys .lh { fill: var(--left); }
   .keys .hit { fill: var(--ok); }
   .keys .you { fill: #a3a8ad; }
-  .keys .ghost { fill: var(--ghost); }
+  .keys .next { fill: var(--next); }
   .keys text { font: 600 14px Roboto, system-ui, sans-serif; text-anchor: middle; fill: var(--bg); }
   .keys text.f { font-size: 24px; font-weight: 700; }
   .keys text.c { font-weight: 400; fill: var(--dim); }
@@ -62,7 +62,7 @@
   .legend i, #ear i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 6px 0 0; }
   .legend .l { background: var(--left); }
   .legend .r, .legend .g { background: var(--accent); margin-left: 10px; }
-  .legend .g { background: var(--ghost); }
+  .legend .g { background: var(--next); }
   #ear i { background: var(--line); }
   #ear.on i { background: var(--fg); }
   #style { margin-left: auto; }
@@ -108,7 +108,7 @@
 <div id="start">
   <h1>Chord Coach</h1>
   <p>Keyboard on a piano sound, rhythm and accompaniment off, medium volume.<br>
-    Play each chord a few times. After 3, the next chord shows in grey: move to it whenever you’re ready.</p>
+    Play each chord a few times. After 3, the next chord shows in pink: move to it whenever you’re ready.</p>
   <p class="dim">Blue keys are your left hand, orange your right. Big numbers are fingers: 1 thumb, 2 index, 3 middle, 4 ring, 5 pinky.
     Too hard or too easy? The Level button at the bottom changes how many notes you play.</p>
   <button id="go">Start</button>

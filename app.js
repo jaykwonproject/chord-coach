@@ -63,7 +63,7 @@ function onChord(best) {
     if (!key) { history = [current.chord]; key = inferKey(history, null); setPicks(); }
     reps++;
     stray = null;
-    note = reps < REPS ? `✓ ${reps} of ${REPS}` : reps === REPS ? '✓ Nice. The next chord is in grey: play it when you’re ready.' : `✓ ${reps} times`;
+    note = reps < REPS ? `✓ ${reps} of ${REPS}` : reps === REPS ? '✓ Nice. The next chord is in pink: play it when you’re ready.' : `✓ ${reps} times`;
     heard = current.chord; heardVoice = currentVoice;
     return flash();
   }
@@ -117,22 +117,24 @@ function render() {
   const done = Math.min(reps, REPS);
   $('nLabel').textContent = 'Practise';
   $('nName').innerHTML = `${nameHTML(current.chord)}<span class="reps">${'●'.repeat(done)}${'○'.repeat(REPS - done)}</span>`;
-  $('nTag').textContent = current.move;
-  $('nSub').textContent = [key && jobText(current.chord), currentVoice.extra.length && `right hand adds the ${currentVoice.extra.join(' and ')}`].filter(Boolean).join(' · ');
+  $('nTag').textContent = '';
+  $('nSub').textContent = [current.move, key && jobText(current.chord), currentVoice.extra.length && `adds the ${currentVoice.extra.join(' and ')}`].filter(Boolean).join(' · ');
 
-  const next = picks[0];
-  let ghost = [];
+  const next = picks[0], now = marks(current.chord, currentVoice);
+  let ahead = [];
   if (ready()) {
     const alts = picks.slice(1).map((s, i) => `<button data-i="${i + 1}">${nameHTML(s.chord)}</button>`).join('');
-    $('then').innerHTML = `<span>Then <b>${nameHTML(next.chord)}</b> · ${next.move}</span>${alts ? `<span class="alts">or ${alts}</span>` : ''}`;
-    if (hints === 'keys') {
-      const own = new Set([...currentVoice.lh, ...currentVoice.rh]);
-      ghost = marks(next.chord, voice(next.chord, currentVoice.rh, level), 'ghost', 'ghost').filter(m => !own.has(m.midi));
+    $('then').innerHTML = `<span>Next <b>${nameHTML(next.chord)}</b> ${next.move}</span>${alts ? `<span class="alts">or ${alts}</span>` : ''}`;
+    if (hints === 'keys') { // next chord's keys in pink; keys it shares with this chord get a pink stripe (that finger stays)
+      for (const m of marks(next.chord, voice(next.chord, currentVoice.rh, level), 'next', 'next')) {
+        const shared = now.find(k => k.midi === m.midi);
+        if (shared) shared.band = 'next'; else ahead.push(m);
+      }
     }
   } else {
     $('then').innerHTML = `<span class="dim">Play it ${REPS - done} more time${REPS - done === 1 ? '' : 's'} to see what comes next.</span>`;
   }
-  drawKeys($('keys'), [...marks(current.chord, currentVoice), ...ghost]);
+  drawKeys($('keys'), [...now, ...ahead]);
 }
 
 function flash() { // the chord's keys flash green, then back to normal

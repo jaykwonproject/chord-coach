@@ -42,10 +42,10 @@ Changed 2026-11-24, after your feedback. Before, the app jumped to a new chord e
 PRACTISE one chord (coloured keys, fingers) ──► play it, dots fill ●●○
         │ after 3 plays
         ▼
-NEXT chord appears in grey (keys + name), plus 2 alternatives to tap
+NEXT chord appears in pink (keys + name), plus 2 alternatives to tap
         │ keep practising as long as you like…
         ▼
-play the grey chord ──► it becomes the one you practise (●○○) ──► repeat
+play the pink chord ──► it becomes the one you practise (●○○) ──► repeat
 ```
 
 - **A different chord once** (a slip, or the mic mishearing): it's named in "You played", and nothing else changes.
@@ -56,7 +56,7 @@ play the grey chord ──► it becomes the one you practise (●○○) ──
 
 | Hints    | What happens                                                         | When              |
 |----------|----------------------------------------------------------------------|-------------------|
-| **Keys** | Next chord's name + grey keys after 3 plays                          | start here        |
+| **Keys** | Next chord's name + pink keys after 3 plays                          | start here        |
 | **Name** | Next chord's name only; find the keys yourself                       | learning shapes   |
 | **Off**  | Free play: no practising; the app follows every chord, names it, rates the move | the goal |
 
@@ -182,8 +182,8 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 | First open | Big "Start" (Chrome needs one tap before it can use the mic), then 1 s "stay quiet" while it measures the room. Next shows **C** (all white keys). |
 | Single key | Shown as a note, not a chord: `C (one note)` in grey |
 | Unclear sound | Nothing changes; it never guesses |
-| Played the chord you're practising | Keys flash green, one more dot fills (●●○); after 3 the next chord shows in grey |
-| Played the grey chord | It becomes the one you practise |
+| Played the chord you're practising | Keys flash green, one more dot fills (●●○); after 3 the next chord shows in pink (keys it shares with this one get a pink stripe: that finger stays) |
+| Played the pink chord | It becomes the one you practise |
 | Played something else | Named in "You played"; twice in a row switches to practising it |
 | Mic blocked | One line saying how to allow it in Chrome |
 
