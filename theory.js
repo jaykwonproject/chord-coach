@@ -91,8 +91,8 @@ export function inferKey(history, current) {
         // a minor 7th chord is usually a ii or vi in jazz; a minor key's home chord is m6 (or a plain minor triad)
         const home = d && d.off === 0 && !(key.mode === 'minor' && ['m7', 'm9'].includes(c.q));
         s += w * (!d ? (['dom', 'sus', 'aug'].includes(fam(c)) ? 0 : -1) : home ? 2 : d.roman === 'V' ? 1.5 : 1);
-        // a cadence (G7 -> C, or its tritone sub D♭7 -> C) points straight at this key's home chord
-        if (p && home && fam(p) === 'dom' && [5, 11].includes((c.root - p.root + 12) % 12)) s += w * 1.5;
+        // a cadence (G7 -> C, its tritone sub D♭7 -> C, or the backdoor B♭7 -> C) points straight at this key's home chord
+        if (p && home && fam(p) === 'dom' && [5, 11, 2].includes((c.root - p.root + 12) % 12)) s += w * 1.5;
       });
       if (s > bestScore) { best = key; bestScore = s; }
     }
@@ -153,17 +153,60 @@ export function suggest(chord, key, history = [], style = 'jazz') {
       }
     }
   }
-  // Variety: a move you made lately (C -> F) sinks, so next time from C you're shown another way out; chords you've
-  // played lately sink a little; going straight back to the chord before last sinks more.
-  // ponytail: fixed penalties; tune if suggestions feel too jumpy or too repetitive.
+  // Most natural move first. (Pushing recently played chords down made suggestions wander like a random walk,
+  // which stopped them sounding like music; variety now comes from practising different progressions.)
   const lastSeen = c => history.findLastIndex(h => same(h, c));
-  const made = c => history.filter((h, i) => i > 0 && same(history[i - 1], chord) && same(h, c)).length;
-  const fresh = s => s.weight - 1.2 * made(s.chord) - 0.3 * history.filter(h => same(h, s.chord)).length
-    - (same(history.at(-2), s.chord) ? 1 : 0);
   return [...out.values()]
     .map(s => ({ ...s, ...label(s.chord, key) }))
     // ties: chords of the key first, then the one you played least recently
-    .sort((a, b) => fresh(b) - fresh(a) || !!b.roman - !!a.roman || lastSeen(a.chord) - lastSeen(b.chord));
+    .sort((a, b) => b.weight - a.weight || !!b.roman - !!a.roman || lastSeen(a.chord) - lastSeen(b.chord));
+}
+
+// Progressions to practise on a loop: [semitones above the key's home note, quality] per chord. Major ones are
+// played in C, minor ones in A minor. `next` lists variations that keep most of the sound and change one idea.
+export const PROGRESSIONS = {
+  pop: [
+    { id: 'p1', romans: 'I–V–vi–IV', name: 'the pop progression', mode: 'major', steps: [[0, ''], [7, ''], [9, 'm'], [5, '']], next: ['p2', 'p4'] },
+    { id: 'p2', romans: 'I–vi–IV–V', name: 'the 50s progression', mode: 'major', steps: [[0, ''], [9, 'm'], [5, ''], [7, '']], next: ['p5', 'p6'] },
+    { id: 'p4', romans: 'vi–IV–I–V', name: 'the sad pop progression', mode: 'major', steps: [[9, 'm'], [5, ''], [0, ''], [7, '']], next: ['p8', 'p5'] },
+    { id: 'p5', romans: 'I–IV–vi–V', name: 'the lift', mode: 'major', steps: [[0, ''], [5, ''], [9, 'm'], [7, '']], next: ['p6', 'p1'] },
+    { id: 'p6', romans: 'I–iii–IV–V', name: 'the climb', mode: 'major', steps: [[0, ''], [4, 'm'], [5, ''], [7, '']], next: ['p2', 'p7'] },
+    { id: 'p3', romans: 'I–IV–V', name: 'the three-chord song', mode: 'major', steps: [[0, ''], [5, ''], [7, '']], next: ['p1', 'p7'] },
+    { id: 'p7', romans: 'ii–V–I', name: 'the cadence', mode: 'major', steps: [[2, 'm'], [7, ''], [0, '']], next: ['p3', 'p9'] },
+    { id: 'p8', romans: 'i–VI–III–VII', name: 'the minor anthem', mode: 'minor', steps: [[0, 'm'], [8, ''], [3, ''], [10, '']], next: ['p9', 'p4'] },
+    { id: 'p9', romans: 'i–iv–V', name: 'the minor cadence', mode: 'minor', steps: [[0, 'm'], [5, 'm'], [7, '']], next: ['p8', 'p7'] },
+  ],
+  jazz: [
+    { id: 'j1', romans: 'ii–V–I', name: 'the jazz cadence', mode: 'major', steps: [[2, 'm7'], [7, '7'], [0, 'maj7']], next: ['j2', 'j5'] },
+    { id: 'j2', romans: 'I–vi–ii–V', name: 'the turnaround', mode: 'major', steps: [[0, 'maj7'], [9, 'm7'], [2, 'm7'], [7, '7']], next: ['j3', 'j4'] },
+    { id: 'j3', romans: 'I–VI7–ii–V', name: 'turnaround with a secondary dominant', mode: 'major', steps: [[0, 'maj7'], [9, '7'], [2, 'm7'], [7, '7']], next: ['j6', 'j5'] },
+    { id: 'j4', romans: 'iii–vi–ii–V–I', name: 'round the circle of fifths', mode: 'major', steps: [[4, 'm7'], [9, 'm7'], [2, 'm7'], [7, '7'], [0, 'maj7']], next: ['j1', 'j7'] },
+    { id: 'j5', romans: 'ii–♭II7–I', name: 'the tritone sub', mode: 'major', steps: [[2, 'm7'], [1, '7'], [0, 'maj7']], next: ['j6', 'j7'] },
+    { id: 'j6', romans: 'I–II7–ii–♭II7', name: 'the bossa turn', mode: 'major', steps: [[0, 'maj7'], [2, '7'], [2, 'm7'], [1, '7']], next: ['j2', 'j8'] },
+    { id: 'j7', romans: 'IV–iv–♭VII7–I', name: 'the backdoor', mode: 'major', steps: [[5, 'maj7'], [5, 'm7'], [10, '7'], [0, 'maj7']], next: ['j8', 'j1'] },
+    { id: 'j8', romans: 'ii°–V–i', name: 'the minor cadence', mode: 'minor', steps: [[2, 'm7♭5'], [7, '7'], [0, 'm6']], next: ['j1', 'j4'] },
+  ],
+};
+export const findProgression = id => [...PROGRESSIONS.pop, ...PROGRESSIONS.jazz].find(p => p.id === id);
+export const progChords = (p, tonic) => p.steps.map(([o, q]) => ({ root: (tonic + o) % 12, q }));
+
+// Free play: if the last chords you played are part of a known progression (in your key), the chord that continues it.
+export function continuation(history, key, style = 'jazz') {
+  const plainer = c => ({ root: c.root, q: { maj: '', m: 'm', dom: '', hdim: 'dim', dim: 'dim' }[fam(c)] ?? '' });
+  let best = null;
+  for (const p of [...PROGRESSIONS[style], ...PROGRESSIONS[style === 'pop' ? 'jazz' : 'pop']]) {
+    const tonic = p.mode === key.mode ? key.tonic : (key.tonic + (p.mode === 'minor' ? 9 : 3)) % 12; // relative minor/major
+    const cs = progChords(p, tonic), n = cs.length;
+    for (let k = Math.min(3, n - 1, history.length); k >= 2 && (!best || k > best.k); k--) {
+      const tail = history.slice(-k);
+      for (let s = 0; s < n; s++) {
+        if (tail.every((c, j) => same(c, cs[(s + j) % n]))) { best = { k, p, chord: cs[(s + k) % n] }; break; }
+      }
+    }
+  }
+  if (!best) return null;
+  const chord = style === 'pop' ? plainer(best.chord) : best.chord;
+  return { chord, weight: 4, move: `continues ${best.p.romans}, ${best.p.name}`, ...label(chord, key) };
 }
 
 // Roman numeral and job of a chord in the key; chords from outside get a short description instead.

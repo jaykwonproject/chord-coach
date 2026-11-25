@@ -1,6 +1,6 @@
 // node theory.test.js
 import assert from 'node:assert';
-import { inferKey, suggest, rateMove, spell, keyName, rootName, voice } from './theory.js';
+import { inferKey, suggest, rateMove, spell, keyName, rootName, voice, same, PROGRESSIONS, progChords, findProgression, continuation } from './theory.js';
 
 const ch = (root, q = '') => ({ root, q });
 const name = (c, key) => rootName(c, key) + c.q;
@@ -41,13 +41,30 @@ assert.equal(rateMove(ch(2, 'm7'), ch(7, '7'), C_MAJOR), 'ii–V: sets up the pu
 assert.equal(rateMove(ch(7), ch(0), C_MAJOR, 'pop'), 'V–I: resolves home · strong');
 assert.equal(rateMove(ch(0), ch(6), C_MAJOR, 'pop'), 'outside the key');
 
-// Variety: following the top suggestion for 20 chords uses many different moves, not one loop
-for (const [style, first] of [['pop', ch(0)], ['jazz', ch(0, 'maj7')], ['pop', ch(9, 'm')]]) {
-  let c = first, hist = [first], key = inferKey([first], null);
-  for (let i = 0; i < 20; i++) { c = suggest(c, key, hist.slice(-12), style)[0].chord; hist.push(c); key = inferKey(hist.slice(-6), key); }
-  const moves = new Set(hist.slice(1).map((h, i) => `${hist[i].root}${hist[i].q}>${h.root}${h.q}`));
-  assert.ok(moves.size >= 10, `${style}: only ${moves.size} different moves: ${hist.map(h => name(h, key)).join(' ')}`);
+// Progressions: every step (including back to the start) is a move the app can name, no chord repeats itself,
+// the key comes out right, and every variation exists
+for (const [style, list] of Object.entries(PROGRESSIONS)) {
+  for (const p of list) {
+    const tonic = p.mode === 'minor' ? 9 : 0, key = { tonic, mode: p.mode }, cs = progChords(p, tonic);
+    cs.forEach((c, i) => {
+      const nx = cs[(i + 1) % cs.length], r = rateMove(c, nx, key, style);
+      assert.ok(!same(c, nx), `${p.romans}: ${name(c, key)} repeats`);
+      assert.ok(r !== 'unusual move' && r !== 'outside the key', `${p.romans}: ${name(c, key)} -> ${name(nx, key)} is "${r}"`);
+    });
+    const relative = { tonic: (tonic + (p.mode === 'major' ? 9 : 3)) % 12, mode: p.mode === 'major' ? 'minor' : 'major' };
+    assert.ok([keyName(key), keyName(relative)].includes(keyAfter([...cs, ...cs])), `${p.romans} should read as ${keyName(key)}`);
+    for (const id of p.next) assert.ok(findProgression(id), `${p.id} -> ${id} missing`);
+  }
 }
+assert.deepEqual(progChords(findProgression('j2'), 0).map(c => name(c, C_MAJOR)), ['Cmaj7', 'Am7', 'Dm7', 'G7']);
+
+// Free play: the chord that continues a known progression
+const cont = (h, style, key = C_MAJOR) => name(continuation(h, key, style).chord, key);
+assert.equal(cont([ch(0), ch(7)], 'pop'), 'Am');                                  // C G -> Am (I–V–vi–IV)
+assert.equal(cont([ch(0), ch(9, 'm')], 'pop'), 'F');                              // C Am -> F (I–vi–IV–V)
+assert.equal(cont([ch(2, 'm7'), ch(7, '7')], 'jazz'), 'Cmaj7');                   // Dm7 G7 -> Cmaj7
+assert.equal(cont([ch(0, 'maj7'), ch(9, '7')], 'jazz'), 'Dm7');                   // Cmaj7 A7 -> Dm7
+assert.equal(continuation([ch(0), ch(6)], C_MAJOR, 'pop'), null);                 // nothing known
 
 // sus, aug and add9 chords (heard in free play)
 assert.equal(next(ch(0, 'sus4'), C_MAJOR, 'pop')[0], 'C');                        // Csus4 settles to C

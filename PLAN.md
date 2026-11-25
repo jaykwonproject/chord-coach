@@ -34,38 +34,62 @@ What the app does **not** have: songs, lessons, scores, streaks, accounts.
 
 ---
 
-## 2. Core loop: practise, then move on when you're ready
+## 2. Core loop: progressions on a loop, plus free play
 
-Changed 2026-11-24, after your feedback. Before, the app jumped to a new chord every time you played, which was too fast.
+**Changed 2026-11-24** after you said the chords didn't sound like they belonged together: *"just sounds like I'm practicing different chords just to learn chords."*
+
+You were right about both causes:
+- **Drilling one chord at a time** (C C C, F F F) never lets you hear a progression.
+- **The "variety" tweak** pushed suggestions away from the natural next chord, so they wandered at random.
+
+Now you practise whole progressions on a loop, the way songs repeat them.
 
 ```
-PRACTISE one chord (coloured keys, fingers) ──► play it, dots fill ●●○
-        │ after 3 plays
+PROGRESSION shown as a row: C  G  Am  F   ●○○
+play the underlined chord (coloured keys) ──► the next one is always pink ──► round and round
+        │ after 3 rounds
         ▼
-NEXT chord appears in pink (keys + name), plus 2 alternatives to tap
-        │ keep practising as long as you like…
-        ▼
-play the pink chord ──► it becomes the one you practise (●○○) ──► repeat
+2 VARIATIONS offered (tap): keep most of the sound, change one idea
+        e.g. I–vi–ii–V  ->  I–VI7–ii–V  (A7 instead of Am7: a secondary dominant pulls harder into Dm7)
 ```
 
-- **A different chord once** (a slip, or the mic mishearing): it's named in "You played", and nothing else changes.
-- **The same different chord twice in a row:** the app switches to practising that chord, with 2 plays already counted. You can still wander off and it follows.
-- Nothing is ever "wrong".
+**Progressions** (`PROGRESSIONS` in `theory.js`):
+- Pop is played in C or A minor. Each step comes with a "why" line (e.g. "G → Am: fake-out"):
+  - I–V–vi–IV (the pop progression)
+  - I–vi–IV–V (the 50s progression)
+  - vi–IV–I–V (sad pop)
+  - I–IV–vi–V (the lift)
+  - I–iii–IV–V (the climb)
+  - I–IV–V (three-chord song)
+  - ii–V–I (the cadence)
+  - i–VI–III–VII (minor anthem)
+  - i–iv–V (minor cadence)
+- Jazz:
+  - ii–V–I
+  - I–vi–ii–V (turnaround)
+  - I–VI7–ii–V (with a secondary dominant)
+  - iii–vi–ii–V–I (circle of fifths)
+  - ii–♭II7–I (tritone sub)
+  - I–II7–ii–♭II7 (bossa turn)
+  - IV–iv–♭VII7–I (backdoor)
+  - ii°–V–i (minor)
+- Every step is checked to be a named move.
 
-**Hints** (tap to cycle) sets how much of the next chord you see:
+**Playing along:**
+- **A wrong chord:** "That was Dm. This progression wants G here." Nothing moves.
+- **A chord from elsewhere in the loop:** it carries on from there.
+- **The same chord struck again:** ignored.
+- **Voicings:** worked out once per progression, so your hands make the same shapes every round (muscle memory), each moving as little as possible.
 
-| Hints    | What happens                                                         | When              |
-|----------|----------------------------------------------------------------------|-------------------|
-| **Keys** | Next chord's name + pink keys after 3 plays                          | start here        |
-| **Free play** | No practising. Play anything: the app names it, rates the move, and shows the next chord in pink straight away | most of the time |
+The mode button switches between **Progressions** and **Free play**.
 
-**Free play** (updated 2026-11-24, because you mostly play whatever comes to hand):
+**Free play** (you mostly play whatever comes to hand):
 - The left side lists your last 4 chords ("Am → Csus4 → F → G").
 - The right side shows what you just played, with its keys.
-- The next chord is in pink, chosen from the chords you've been playing (they set the key), with two alternatives.
-- Playing the pink chord flashes green.
-- It listens for every chord type in free play, including sus2, sus4, aug and add9.
-- When it can't name a sound it says so ("Just one note (E). Press two or three keys together") instead of staying silent.
+- **The next chord is in pink straight away.** If your last 2–3 chords are part of a known progression, it suggests the chord that continues it ("continues I–V–vi–IV, the pop progression"). Otherwise it suggests the most natural move in your key.
+- Two alternatives sit beside the chord name. Playing the pink chord flashes green.
+- It listens for every chord type, including sus2, sus4, aug and add9.
+- When it can't name a sound it says so ("Just one note (E). Press two or three keys together").
 
 **Level** (tap to cycle) sets how many notes you play:
 
@@ -138,12 +162,7 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 | VI   | VII         | III, iv    | ii°            |
 | VII  | III, i      | VI         | –              |
 
-- **Next** is the strongest move, adjusted for **variety** (2026-11-24, after "make sure I'm not playing the same thing over and over"). Using the last 12 chords:
-  - a move you made recently (C → F) loses 1.2 per time, so from C you're shown another way out
-  - a chord you played recently loses 0.3 per time
-  - going straight back to the chord before last loses 1
-  - **Result:** following the suggestions for 20 chords uses 13–15 different moves instead of looping C F G.
-  - Ties go to the chord of the key, then the one played least recently.
+- **Next** is the most natural move. A tie goes to a chord of the key, then the one played least recently. (A variety penalty was tried and removed on 2026-11-24: it made suggestions wander. Variety now comes from switching progressions.)
 - **Alternatives** (two small chips) are the next two best moves. Tapping one makes it the target.
 - **Why** label: the target's job plus a few named moves, e.g. V→I *"home: strongest pull"*, IV→I *"soft landing"*, V→vi *"fake-out"*, ii→V *"sets up home"*, vi→IV *"pop staple"*.
 - **Chord outside the key**: if it is major and its resolution a 5th down is in the key, suggest that (E → Am in C). Otherwise suggest home (I), then IV.
@@ -201,7 +220,7 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 **Controls:** three buttons in the bottom bar, all remembered between sessions.
 - **Style:** Jazz / Pop. Changing it starts over on C.
 - **Level:** Easy / Medium / Full.
-- **Hints:** Next: keys / Free play. (A name-only middle setting was removed on 2026-11-24: it hid the keys and was too easy to switch on by accident.)
+- **Mode:** Progressions / Free play. (Earlier "hints" settings were removed: a name-only setting hid the keys, and practising single chords was replaced by progressions.)
 
 **Then** (once unlocked) shows the best move, plus two alternatives you can tap:
 - the next-best chord from the key
