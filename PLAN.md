@@ -57,9 +57,15 @@ play the pink chord ──► it becomes the one you practise (●○○) ──
 | Hints    | What happens                                                         | When              |
 |----------|----------------------------------------------------------------------|-------------------|
 | **Keys** | Next chord's name + pink keys after 3 plays                          | start here        |
-| **Off**  | Free play: no practising; the app follows every chord, names it, rates the move | the goal |
+| **Free play** | No practising. Play anything: the app names it, rates the move, and shows the next chord in pink straight away | most of the time |
 
-Moving from Keys to Off is your progress.
+**Free play** (updated 2026-11-24, because you mostly play whatever comes to hand):
+- The left side lists your last 4 chords ("Am → Csus4 → F → G").
+- The right side shows what you just played, with its keys.
+- The next chord is in pink, chosen from the chords you've been playing (they set the key), with two alternatives.
+- Playing the pink chord flashes green.
+- It listens for every chord type in free play, including sus2, sus4, aug and add9.
+- When it can't name a sound it says so ("Just one note (E). Press two or three keys together") instead of staying silent.
 
 **Level** (tap to cycle) sets how many notes you play:
 
@@ -90,6 +96,7 @@ Moving from Keys to Off is your progress.
 ### 3.2 Chord set and spelling
 - **Style: Pop** — major, minor and diminished triads.
 - **Style: Jazz** (default; covers bossa nova) — maj7, 6, m7, m6, 7, m7♭5, dim7, plus 9th/13th versions the mic may hear (Cmaj9, G13).
+- Also recognised: sus2, sus4, aug and add9. Free play and Jazz listen for them. A sus chord resolves to its own root (Csus4 → C); an augmented chord pushes up a fourth (Caug → F).
 - Detection compares chord *families* (Cmaj9 counts as Cmaj7, G13 as G7).
 - The mic also finds your **left-hand bass note** (lowest strong note below middle C), which settles look-alikes: A + C E G is Am7, C + E G A is C6.
 - It leans slightly toward the chord it just suggested.
@@ -131,7 +138,12 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 | VI   | VII         | III, iv    | ii°            |
 | VII  | III, i      | VI         | –              |
 
-- **Next** (big) is the strongest move. A tie goes to the chord you played least recently. That spreads your practice and stops the I–V–I–V ping-pong.
+- **Next** is the strongest move, adjusted for **variety** (2026-11-24, after "make sure I'm not playing the same thing over and over"). Using the last 12 chords:
+  - a move you made recently (C → F) loses 1.2 per time, so from C you're shown another way out
+  - a chord you played recently loses 0.3 per time
+  - going straight back to the chord before last loses 1
+  - **Result:** following the suggestions for 20 chords uses 13–15 different moves instead of looping C F G.
+  - Ties go to the chord of the key, then the one played least recently.
 - **Alternatives** (two small chips) are the next two best moves. Tapping one makes it the target.
 - **Why** label: the target's job plus a few named moves, e.g. V→I *"home: strongest pull"*, IV→I *"soft landing"*, V→vi *"fake-out"*, ii→V *"sets up home"*, vi→IV *"pop staple"*.
 - **Chord outside the key**: if it is major and its resolution a 5th down is in the key, suggest that (E → Am in C). Otherwise suggest home (I), then IV.
@@ -143,7 +155,7 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
   - **Jazz** uses rootless voicings: 3-5-7-9 or 7-9-3-5, and 3-13-♭7-9 for dominants.
   - **Pop** uses triads.
 - **Voice leading:** each new chord picks the shape closest to the last one, so the hand barely moves. A ii–V–I is Dm9 F A C E → G13 F A B E → Cmaj9 E G B D.
-- **Finger numbers** on every key: 1 thumb … 5 pinky. Four notes are fingered 1-2-3-5; three notes are 1-3-5, or 1-2-5 when the bottom two notes are close.
+- **Finger numbers** on every key: 1 thumb … 5 pinky. Four notes are fingered 1-2-3-5. Three notes are 1-3-5, or 1-2-5 when the top gap is wide (E G C), or 1-4-5 when it's a step (C F G). Two-note shells are 1-4 or 1-5.
 - Three octaves are drawn, from the C below middle C. Every C is labelled, and middle C says "mid C".
 - The mic can't see which keys you pressed, so "You played" shows the app's own voicing of that chord.
 

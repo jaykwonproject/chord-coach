@@ -44,6 +44,13 @@ assert.equal(heard([57, 60, 64, 67], JAZZ), 'Am7');            // A + C E G: the
 assert.equal(heard([48, 64, 67, 69], JAZZ), 'C6');             // C + E G A: the bass says C6, not Am7
 assert.equal(heard([55, 59, 62, 65], JAZZ), 'G7');
 
+// Free play listens for everything; plain triads must still come out plain
+assert.equal(heard([60, 64, 67], JAZZ), 'C');
+assert.equal(heard([57, 60, 64], JAZZ), 'Am');
+assert.equal(heard([48, 60, 65, 67], JAZZ), 'Csus4');          // C + C F G
+assert.equal(heard([48, 60, 64, 68], JAZZ), 'Caug');           // C + C E G♯
+assert.equal(heard([48, 62, 64, 67], JAZZ), 'Cadd9');          // C + D E G
+
 // Easy jazz: left-hand root + right-hand 3rd and 7th (shell voicings, no 5th)
 assert.match(famOf([50, 65, 72]), /^2:m(7|9)$/);               // D + F C = Dm7
 assert.match(famOf([55, 65, 71]), /^7:(7|9|13)$/);             // G + F B = G7

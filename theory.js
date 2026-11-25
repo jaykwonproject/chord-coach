@@ -1,15 +1,17 @@
 // Music theory for Chord Coach: chord types, keys, next-chord moves, two-hand voicings, spelling. Pure functions.
 // A chord is {root: 0-11 (C=0), q: a key of QUALITIES}. A key is {tonic: 0-11, mode: 'major' | 'minor'}.
 
-// Semitones above the root, and the family (the job a chord can do: maj, m, dom, hdim, dim).
+// Semitones above the root, and the family (the job a chord can do: maj, m, dom, hdim, dim, sus, aug).
 export const QUALITIES = {
   '': { iv: [0, 4, 7], fam: 'maj' }, m: { iv: [0, 3, 7], fam: 'm' }, dim: { iv: [0, 3, 6], fam: 'dim' },
+  sus2: { iv: [0, 2, 7], fam: 'sus' }, sus4: { iv: [0, 5, 7], fam: 'sus' }, aug: { iv: [0, 4, 8], fam: 'aug' },
+  add9: { iv: [0, 4, 7, 14], fam: 'maj' },
   maj7: { iv: [0, 4, 7, 11], fam: 'maj' }, 6: { iv: [0, 4, 7, 9], fam: 'maj' }, maj9: { iv: [0, 4, 7, 11, 14], fam: 'maj' },
   m7: { iv: [0, 3, 7, 10], fam: 'm' }, m6: { iv: [0, 3, 7, 9], fam: 'm' }, m9: { iv: [0, 3, 7, 10, 14], fam: 'm' },
   7: { iv: [0, 4, 7, 10], fam: 'dom' }, 9: { iv: [0, 4, 7, 10, 14], fam: 'dom' }, 13: { iv: [0, 4, 10, 14, 21], fam: 'dom' },
   'm7♭5': { iv: [0, 3, 6, 10], fam: 'hdim' }, dim7: { iv: [0, 3, 6, 9], fam: 'dim' },
 };
-// Chords the mic listens for, per style.
+// Chords the mic listens for: practising pop listens for plain triads; jazz (and free play) for everything.
 export const PALETTES = { pop: ['', 'm', 'dim'], jazz: Object.keys(QUALITIES) };
 
 // The chords that belong to a key, with the quality each style uses for them.
@@ -88,7 +90,7 @@ export function inferKey(history, current) {
         const d = degree(c, key), w = 0.75 ** (history.length - 1 - i), p = history[i - 1];
         // a minor 7th chord is usually a ii or vi in jazz; a minor key's home chord is m6 (or a plain minor triad)
         const home = d && d.off === 0 && !(key.mode === 'minor' && ['m7', 'm9'].includes(c.q));
-        s += w * (!d ? (fam(c) === 'dom' ? 0 : -1) : home ? 2 : d.roman === 'V' ? 1.5 : 1);
+        s += w * (!d ? (['dom', 'sus', 'aug'].includes(fam(c)) ? 0 : -1) : home ? 2 : d.roman === 'V' ? 1.5 : 1);
         // a cadence (G7 -> C, or its tritone sub D♭7 -> C) points straight at this key's home chord
         if (p && home && fam(p) === 'dom' && [5, 11].includes((c.root - p.root + 12) % 12)) s += w * 1.5;
       });
@@ -113,10 +115,11 @@ export function suggest(chord, key, history = [], style = 'jazz') {
   };
 
   // Named moves first, so on a tie their label wins over the generic one.
-  if (f === 'dom' || (!d && chord.q === '')) { // a dominant (or an outside major chord) wants to fall a fifth
+  if (f === 'dom' || f === 'aug' || (!d && chord.q === '')) { // a dominant (or outside major, or augmented) chord wants to fall a fifth
     const t = at(r + 5);
     add(t, 3, t && t.root === key.tonic ? 'V–I: resolves home' : `resolves to ${t && name(t)}`);
   }
+  if (f === 'sus') add(at(r) ?? { root: r, q: '' }, 3, 'sus resolves: same root, settled'); // Csus4 -> C
   if (style === 'jazz') {
     const fromTonic = (r - key.tonic + 12) % 12;
     if (f === 'dom' && fromTonic === 10 && key.mode === 'major') add(at(key.tonic), 3, 'backdoor: sneaks home');
@@ -150,11 +153,17 @@ export function suggest(chord, key, history = [], style = 'jazz') {
       }
     }
   }
+  // Variety: a move you made lately (C -> F) sinks, so next time from C you're shown another way out; chords you've
+  // played lately sink a little; going straight back to the chord before last sinks more.
+  // ponytail: fixed penalties; tune if suggestions feel too jumpy or too repetitive.
   const lastSeen = c => history.findLastIndex(h => same(h, c));
+  const made = c => history.filter((h, i) => i > 0 && same(history[i - 1], chord) && same(h, c)).length;
+  const fresh = s => s.weight - 1.2 * made(s.chord) - 0.3 * history.filter(h => same(h, s.chord)).length
+    - (same(history.at(-2), s.chord) ? 1 : 0);
   return [...out.values()]
     .map(s => ({ ...s, ...label(s.chord, key) }))
     // ties: chords of the key first, then the one you played least recently
-    .sort((a, b) => b.weight - a.weight || !!b.roman - !!a.roman || lastSeen(a.chord) - lastSeen(b.chord));
+    .sort((a, b) => fresh(b) - fresh(a) || !!b.roman - !!a.roman || lastSeen(a.chord) - lastSeen(b.chord));
 }
 
 // Roman numeral and job of a chord in the key; chords from outside get a short description instead.
@@ -162,7 +171,7 @@ export function label(c, key) {
   const d = degree(c, key);
   if (d) return { roman: d.roman, job: d.job };
   const f = fam(c);
-  return { roman: '', job: f === 'dom' ? 'tension' : f === 'dim' ? 'passing' : 'color' };
+  return { roman: '', job: { dom: 'tension', aug: 'tension', dim: 'passing', sus: 'suspended' }[f] ?? 'color' };
 }
 
 // "ii–V: sets up the pull · strong", or how far outside the move was.
@@ -189,7 +198,7 @@ const rotations = iv => iv.map((_, k) => [...iv.slice(k), ...iv.slice(0, k).map(
 
 export function voice(c, prev, level = 'full') {
   const b = BASE[c.q] ?? c.q, seventh = !!UPPER[b];
-  const forms = !seventh ? rotations(QUALITIES[c.q].iv)
+  const forms = !seventh ? rotations([...new Set(QUALITIES[c.q].iv.map(i => i % 12))].sort((a, b) => a - b)) // triads, sus, add9: close shapes
     : level === 'full' ? ROOTLESS[b] : rotations(level === 'easy' && SHELL[b] ? SHELL[b] : UPPER[b]);
   let rh, best = Infinity;
   forms.forEach((form, fi) => {
@@ -202,7 +211,9 @@ export function voice(c, prev, level = 'full') {
       if (cost < best) { rh = n; best = cost; }
     }
   });
-  const fingers = rh.length === 4 ? [1, 2, 3, 5] : rh.length === 3 ? [1, rh[1] - rh[0] <= 3 ? 2 : 3, 5] : [1, rh[1] - rh[0] <= 5 ? 4 : 5];
+  // 3 notes: 1-3-5, but 1-2-5 when the top gap is wide (E G C) and 1-4-5 when it's a step (C F G)
+  const top = rh[2] - rh[1];
+  const fingers = rh.length === 4 ? [1, 2, 3, 5] : rh.length === 3 ? [1, top >= 5 ? 2 : top <= 2 ? 4 : 3, 5] : [1, rh[1] - rh[0] <= 5 ? 4 : 5];
   const core = QUALITIES[c.q].iv.map(i => i % 12);
   const extra = [...new Set(rh.map(x => (x - c.root + 120) % 12).filter(i => !core.includes(i)))].map(i => ({ 2: '9', 9: '13' })[i]).filter(Boolean).sort((a, b) => a - b);
   const lh = level === 'easy' && !seventh ? [] : [48 + c.root]; // easy triads: right hand only

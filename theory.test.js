@@ -41,6 +41,20 @@ assert.equal(rateMove(ch(2, 'm7'), ch(7, '7'), C_MAJOR), 'ii–V: sets up the pu
 assert.equal(rateMove(ch(7), ch(0), C_MAJOR, 'pop'), 'V–I: resolves home · strong');
 assert.equal(rateMove(ch(0), ch(6), C_MAJOR, 'pop'), 'outside the key');
 
+// Variety: following the top suggestion for 20 chords uses many different moves, not one loop
+for (const [style, first] of [['pop', ch(0)], ['jazz', ch(0, 'maj7')], ['pop', ch(9, 'm')]]) {
+  let c = first, hist = [first], key = inferKey([first], null);
+  for (let i = 0; i < 20; i++) { c = suggest(c, key, hist.slice(-12), style)[0].chord; hist.push(c); key = inferKey(hist.slice(-6), key); }
+  const moves = new Set(hist.slice(1).map((h, i) => `${hist[i].root}${hist[i].q}>${h.root}${h.q}`));
+  assert.ok(moves.size >= 10, `${style}: only ${moves.size} different moves: ${hist.map(h => name(h, key)).join(' ')}`);
+}
+
+// sus, aug and add9 chords (heard in free play)
+assert.equal(next(ch(0, 'sus4'), C_MAJOR, 'pop')[0], 'C');                        // Csus4 settles to C
+assert.equal(next(ch(0, 'aug'), C_MAJOR, 'pop')[0], 'F');                         // Caug pushes up to F
+assert.deepEqual(voice(ch(0, 'add9')).rh, [60, 62, 64, 67]);                       // Cadd9: C D E G
+assert.deepEqual(spell(ch(0, 'sus4'), C_MAJOR), ['C', 'F', 'G']);
+
 // Two-hand voicings: ii–V–I keeps the right hand almost still
 const v1 = voice(ch(2, 'm7')), v2 = voice(ch(7, '7'), v1.rh), v3 = voice(ch(0, 'maj7'), v2.rh);
 const moved = (a, b) => a.reduce((s, x, i) => s + Math.abs(x - b[i]), 0);
@@ -51,6 +65,10 @@ assert.deepEqual(voice(ch(0)).rh, [60, 64, 67]);                                
 assert.deepEqual(voice(ch(0)).rhFingers, [1, 3, 5]);
 assert.deepEqual(voice(ch(5), [60, 64, 67]).rh, [60, 65, 69]);                     // C -> F: closest shape is C F A
 assert.deepEqual(voice(ch(5), [60, 64, 67]).rhFingers, [1, 3, 5]);
+assert.deepEqual(voice(ch(4, 'm')).rhFingers, [1, 3, 5]);                          // Em root position: E G B
+assert.deepEqual(voice(ch(0), [64, 67, 72]).rh, [64, 67, 72]);                     // C first inversion E G C…
+assert.deepEqual(voice(ch(0), [64, 67, 72]).rhFingers, [1, 2, 5]);                 // …is fingered 1-2-5
+assert.deepEqual(voice(ch(0, 'sus4')).rhFingers, [1, 4, 5]);                       // C F G
 // Easy: 2-note shells (3rd + 7th) under a left-hand root; a ii–V–I moves one finger at a time
 const e1 = voice(ch(2, 'm7'), null, 'easy'), e2 = voice(ch(7, '7'), e1.rh, 'easy'), e3 = voice(ch(0, 'maj7'), e2.rh, 'easy');
 assert.equal(e1.rh.length, 2);

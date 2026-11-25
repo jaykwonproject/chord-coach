@@ -57,6 +57,8 @@
   .keys text.f { font-size: 24px; font-weight: 700; }
   .keys text.c { font-weight: 400; fill: var(--dim); }
   #pKeys text { display: none; }
+  .free #pKeys { display: none; }                       /* free play: the left side lists your chords instead */
+  .free #pName { font-size: 26px; white-space: normal; line-height: 1.25; }
 
   footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 4px 0 8px; color: var(--dim); white-space: nowrap; }
   .legend i, #ear i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 6px 0 0; }
@@ -84,7 +86,7 @@
 <body>
 <div id="app">
   <section id="played">
-    <p class="label">You played</p>
+    <p class="label" id="pLabel">You played</p>
     <div class="row"><span class="name" id="pName">–</span><span class="tag" id="pTag"></span></div>
     <svg class="keys" id="pKeys" viewBox="0 0 840 160"></svg>
     <p class="tag" id="pMove">Strike a chord and hold it a moment.</p>
@@ -118,7 +120,7 @@
 </div>
 <!-- Release: bump v= here so phones fetch the new code instead of a cached copy (GitHub Pages caches files for 10 min). -->
 <script type="importmap">
-{ "imports": { "./app.js": "./app.js?v=9", "./listen.js": "./listen.js?v=9", "./theory.js": "./theory.js?v=9", "./keys.js": "./keys.js?v=9" } }
+{ "imports": { "./app.js": "./app.js?v=10", "./listen.js": "./listen.js?v=10", "./theory.js": "./theory.js?v=10", "./keys.js": "./keys.js?v=10" } }
 </script>
 <script type="module">import './app.js';</script>
 </body>

@@ -41,11 +41,16 @@ function reset() {
   currentVoice = voice(current.chord, null, level);
 }
 
+// Remember a chord you played: the last 12 steer variety in suggestions, the last 6 decide the key.
+function remember(chord) {
+  history = [...history, chord].slice(-12);
+  key = inferKey(history.slice(-6), key);
+}
+
 // Practise `s` from now on; you've just played it `count` times.
 function moveTo(s, count) {
   const prev = current.chord, oldKey = key;
-  history = [...history, s.chord].slice(-6);
-  key = inferKey(history, key);
+  remember(s.chord);
   const rating = oldKey ? rateMove(prev, s.chord, oldKey, style) : '';
   note = oldKey ? `${plain(prev)} → ${plain(s.chord)} · ${rating}` : `Starting from ${plain(s.chord)} · key of ${keyName(key)}`;
   if (oldKey && keyName(oldKey) !== keyName(key)) note += ` · now in ${keyName(key)}`;
@@ -60,7 +65,7 @@ function onChord(best) {
   const chord = { root: best.root, q: best.q };
   if (hints === 'off') return freePlay(chord);
   if (same(chord, current.chord)) { // another good rep
-    if (!key) { history = [current.chord]; key = inferKey(history, null); setPicks(); }
+    if (!key) { remember(current.chord); setPicks(); }
     reps++;
     stray = null;
     note = reps < REPS ? `✓ ${reps} of ${REPS}` : reps === REPS ? '✓ Nice. The next chord is in pink: play it when you’re ready.' : `✓ ${reps} times`;
@@ -80,43 +85,61 @@ function onChord(best) {
   render();
 }
 
-// Hints off: the app follows every chord you play, names it and rates the move.
+// Free play: the app follows every chord you play, names it, rates the move and shows what can come next.
 function freePlay(chord) {
-  if (same(chord, heard)) return;
-  const prev = heard, oldKey = key;
-  history = [...history, chord].slice(-6);
-  key = inferKey(history, key);
+  if (heard && same(chord, current.chord)) return; // the same chord again isn't a move
+  const followed = heard && picks[0] && same(chord, picks[0].chord), prev = heard ? current.chord : null, oldKey = key;
+  remember(chord);
   const rating = prev && oldKey ? rateMove(prev, chord, oldKey, style) : '';
   note = prev ? `${plain(prev)} → ${plain(chord)} · ${rating}` : `Key of ${keyName(key)}`;
-  heard = chord; heardVoice = voice(chord, heardVoice?.rh, level);
-  current = { chord, move: rating }; currentVoice = heardVoice; // so practice can pick up from here
+  if (oldKey && keyName(oldKey) !== keyName(key)) note += ` · now in ${keyName(key)}`;
+  current = { chord, move: rating };
+  currentVoice = voice(chord, currentVoice.rh, level);
+  heard = chord; heardVoice = currentVoice;
+  reps = REPS; // no practising here: the next chord shows straight away
+  setPicks();
+  followed ? flash() : render();
+}
+
+// The mic heard something but couldn't name it.
+function onUnclear(best) {
+  note = best.chord ? 'Didn’t catch that one. Strike it again and hold it a moment.'
+    : `Just one note (${best.name.split(' ')[0]}). Press two or three keys together for a chord.`;
   render();
 }
 
 function render() {
+  const free = hints === 'off';
+  document.body.classList.toggle('free', free);
   $('hints').textContent = HINTS[hints];
   $('style').textContent = STYLES[style];
   $('level').textContent = LEVELS[level];
   $('key').textContent = key ? 'Key of ' + keyName(key) : 'Key: not yet';
 
-  $('pName').innerHTML = heard ? nameHTML(heard) : '–';
-  $('pTag').textContent = heard && key ? jobText(heard) : '';
-  drawKeys($('pKeys'), heard ? marks(heard, heardVoice, 'you', 'you') : []);
-  $('pMove').textContent = note || 'Strike the chord with both hands and hold it a moment.';
+  if (free) { // left: the chords you've played so far
+    $('pLabel').textContent = 'Your chords';
+    $('pName').innerHTML = heard ? history.slice(-4).map(nameHTML).join(' → ') : '–';
+    $('pTag').textContent = '';
+    $('pMove').textContent = note || 'Play anything. The app names it and shows what can come next.';
+  } else {
+    $('pLabel').textContent = 'You played';
+    $('pName').innerHTML = heard ? nameHTML(heard) : '–';
+    $('pTag').textContent = heard && key ? jobText(heard) : '';
+    drawKeys($('pKeys'), heard ? marks(heard, heardVoice, 'you', 'you') : []);
+    $('pMove').textContent = note || 'Strike the chord with both hands and hold it a moment.';
+  }
 
-  if (hints === 'off') {
-    const [mv, strength] = (current.move || '').split(' · ');
+  if (free && !heard) {
     $('nLabel').textContent = 'Free play';
-    $('nName').innerHTML = `<span class="dim msg">${heard ? strength || mv : 'play anything'}</span>`;
-    $('nTag').textContent = heard && strength ? mv : 'The app names each chord and rates the move.';
+    $('nName').innerHTML = '<span class="dim msg">play anything</span>';
     $('nSub').textContent = '';
     $('then').innerHTML = '';
-    return drawKeys($('keys'), heard ? marks(heard, heardVoice) : []);
+    return drawKeys($('keys'));
   }
 
   const done = Math.min(reps, REPS);
-  $('nLabel').textContent = 'Practise';
-  $('nName').innerHTML = `${nameHTML(current.chord)}<span class="reps">${'●'.repeat(done)}${'○'.repeat(REPS - done)}</span>`;
+  $('nLabel').textContent = free ? 'You played' : 'Practise';
+  $('nName').innerHTML = nameHTML(current.chord) + (free ? '' : `<span class="reps">${'●'.repeat(done)}${'○'.repeat(REPS - done)}</span>`);
   $('nTag').textContent = '';
   $('nSub').textContent = [current.move, key && jobText(current.chord), currentVoice.extra.length && `adds the ${currentVoice.extra.join(' and ')}`].filter(Boolean).join(' · ');
 
@@ -148,10 +171,9 @@ $('then').onclick = e => { // pick a different next chord
   if (i) { [picks[0], picks[i]] = [picks[i], picks[0]]; render(); }
 };
 $('hints').onclick = () => {
-  const wasFree = hints === 'off';
   hints = cycle(HINTS, hints);
   save('hints', hints);
-  if (wasFree) reps = heard ? 1 : 0; // back from free play: practise the chord you're on
+  reps = hints === 'off' ? REPS : heard ? 1 : 0; // free play shows the next chord at once; practice starts on the chord you're on
   setPicks();
   render();
 };
@@ -177,9 +199,9 @@ $('go').onclick = async () => {
   document.documentElement.requestFullscreen?.()?.catch(() => {});
   try {
     await startMic({
-      onChord, onFrame,
-      getList: () => LISTS[style],
-      getPrefer: () => (hints === 'off' ? null : [current.chord, ready() ? picks[0].chord : null]),
+      onChord, onFrame, onUnclear,
+      getList: () => (hints === 'off' ? LISTS.jazz : LISTS[style]), // free play listens for every chord type
+      getPrefer: () => (hints === 'off' ? (heard && picks[0] ? [picks[0].chord] : null) : [current.chord, ready() ? picks[0].chord : null]),
     });
     wake();
     document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && wake());
