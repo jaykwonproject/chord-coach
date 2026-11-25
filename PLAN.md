@@ -57,7 +57,6 @@ play the pink chord ──► it becomes the one you practise (●○○) ──
 | Hints    | What happens                                                         | When              |
 |----------|----------------------------------------------------------------------|-------------------|
 | **Keys** | Next chord's name + pink keys after 3 plays                          | start here        |
-| **Name** | Next chord's name only; find the keys yourself                       | learning shapes   |
 | **Off**  | Free play: no practising; the app follows every chord, names it, rates the move | the goal |
 
 Moving from Keys to Off is your progress.
@@ -190,7 +189,7 @@ A move table with weights: **3** strong, **2** common, **1** occasional.
 **Controls:** three buttons in the bottom bar, all remembered between sessions.
 - **Style:** Jazz / Pop. Changing it starts over on C.
 - **Level:** Easy / Medium / Full.
-- **Hints:** Keys / Name / Off.
+- **Hints:** Next: keys / Free play. (A name-only middle setting was removed on 2026-11-24: it hid the keys and was too easy to switch on by accident.)
 
 **Then** (once unlocked) shows the best move, plus two alternatives you can tap:
 - the next-best chord from the key

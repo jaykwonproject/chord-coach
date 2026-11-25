@@ -3,7 +3,7 @@ import { drawKeys } from './keys.js';
 import { inferKey, suggest, rateMove, label, same, voice, noteName, rootName, keyName, PALETTES } from './theory.js';
 
 const REPS = 3; // ponytail: plays of a chord before the next one shows in grey; make it a setting if 3 feels wrong
-const HINTS = { keys: 'Next: keys', name: 'Next: name', off: 'Free play' }; // how much of the next chord to show
+const HINTS = { keys: 'Next: keys', off: 'Free play' }; // practise with the next chord's keys shown, or free play
 const STYLES = { jazz: 'Jazz', pop: 'Pop' };
 const LEVELS = { easy: 'Easy', medium: 'Medium', full: 'Full' };
 const LISTS = { jazz: candidates(PALETTES.jazz), pop: candidates(PALETTES.pop) };
@@ -125,11 +125,10 @@ function render() {
   if (ready()) {
     const alts = picks.slice(1).map((s, i) => `<button data-i="${i + 1}">${nameHTML(s.chord)}</button>`).join('');
     $('then').innerHTML = `<span>Next <b>${nameHTML(next.chord)}</b> ${next.move}</span>${alts ? `<span class="alts">or ${alts}</span>` : ''}`;
-    if (hints === 'keys') { // next chord's keys in pink; keys it shares with this chord get a pink stripe (that finger stays)
-      for (const m of marks(next.chord, voice(next.chord, currentVoice.rh, level), 'next', 'next')) {
-        const shared = now.find(k => k.midi === m.midi);
-        if (shared) shared.band = 'next'; else ahead.push(m);
-      }
+    // next chord's keys in pink; keys it shares with this chord get a pink stripe (that finger stays)
+    for (const m of marks(next.chord, voice(next.chord, currentVoice.rh, level), 'next', 'next')) {
+      const shared = now.find(k => k.midi === m.midi);
+      if (shared) shared.band = 'next'; else ahead.push(m);
     }
   } else {
     $('then').innerHTML = `<span class="dim">Play it ${REPS - done} more time${REPS - done === 1 ? '' : 's'} to see what comes next.</span>`;
